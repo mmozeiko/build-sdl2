@@ -1,0 +1,5 @@
+build
+depend
+download
+SDL2_*
+*.exe

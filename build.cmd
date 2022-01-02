@@ -1,0 +1,709 @@
+@echo off
+setlocal enabledelayedexpansion
+
+cd %~dp0
+set PATH=%CD%;%PATH%
+
+rem
+rem Required dependencies
+rem
+
+set NASM_VERSION=2.15.05
+set YASM_VERSION=1.3.0
+
+set ZLIB_VERSION=1.2.11
+set BZIP2_VERSION=1.0.6
+set XZ_VERSION=5.2.5
+set ZSTD_VERSION=1.5.1
+set LIBPNG_VERSION=1.6.37
+set LIBJPEGTURBO_VERSION=2.1.2
+set JBIG_VERSION=2.1
+set LERC_VERSION=3.0
+set TIFF_VERSION=4.3.0
+set LIBWEBP_VERSION=1.2.1
+set FREETYPE_VERSION=2.11.1
+set HARFBUZZ_VERSION=3.2.0
+set LIBOGG_VERSION=1.3.5
+set LIBVORBIS_VERSION=1.3.7
+set OPUS_VERSION=1.3.1
+set OPUSFILE_VERSION=0.12
+set FLAC_VERSION=1.3.3
+set MPG123_VERSION=1.28.0
+set LIBMODPLUG_VERSION=0.8.9.0
+
+rem
+rem dependencies
+rem
+
+where /q git.exe || (
+  echo ERROR: "git.exe" not found
+  exit /b 1
+)
+
+where /q curl.exe || (
+  echo ERROR: "curl.exe" not found
+  exit /b 1
+)
+
+where /q cmake.exe || (
+  echo ERROR: "cmake.exe" not found
+  exit /b 1
+)
+
+if exist "%ProgramFiles%\7-Zip\7z.exe" (
+  set SZIP="%ProgramFiles%\7-Zip\7z.exe"
+) else (
+  where /q 7za.exe || (
+    echo ERROR: 7-Zip installation or "7za.exe" not found
+    exit /b 1
+  )
+  set SZIP=7za.exe
+)
+
+rem
+rem yasm.exe & nasm.exe
+rem
+
+where /q nasm.exe || (
+  echo Downloading nasm.exe
+  curl.exe -sfLO "https://www.nasm.us/pub/nasm/releasebuilds/%NASM_VERSION%/win64/nasm-%NASM_VERSION%-win64.zip"
+  %SZIP% x -bb0 -y nasm-%NASM_VERSION%-win64.zip nasm-%NASM_VERSION%\nasm.exe 1>nul 2>nul || exit /b 1
+  move nasm-%NASM_VERSION%\nasm.exe nasm.exe
+  rd /s /q nasm-%NASM_VERSION%
+)
+nasm.exe --version || exit /b 1
+
+where /q yasm.exe || (
+  echo Downloading yasm.exe
+  curl -sfLo yasm.exe https://www.tortall.net/projects/yasm/releases/yasm-%YASM_VERSION%-win64.exe || exit /b 1
+
+  if "%GITHUB_WORKFLOW%" neq "" (
+    rem Install VS2010 redistributable
+    curl -sfLO https://download.microsoft.com/download/3/2/2/3224B87F-CFA0-4E70-BDA3-3DE650EFEBA5/vcredist_x64.exe || exit /b 1
+    start /wait vcredist_x64.exe /q /norestart
+    del /q vcredist_x64.exe
+  )
+)
+yasm.exe --version || exit /b 1
+
+rem
+rem MSVC environment
+rem
+
+where /Q cl.exe || (
+  set __VSCMD_ARG_NO_LOGO=1
+  for /f "tokens=*" %%i in ('"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.VisualStudio.Workload.NativeDesktop -property installationPath') do set VS=%%i
+  if "!VS!" equ "" (
+    echo ERROR: Visual Studio installation not found
+    exit /b 1
+  )  
+  call "!VS!\VC\Auxiliary\Build\vcvarsall.bat" amd64 || exit /b 1
+
+  rem TODO: how to automatically detect 2019?
+  set MSVC_GENERATOR="Visual Studio 17 2022"
+)
+
+rem
+rem output folder
+rem
+
+set OUTPUT=%~dp0SDL2
+if not exist %OUTPUT% mkdir %OUTPUT%
+
+rem
+rem temporary folders
+rem
+
+set DEPEND=%~dp0depend
+set DOWNLOAD=%~dp0download
+set BUILD=%~dp0build
+if not exist %DEPEND%   mkdir %DEPEND%
+if not exist %DOWNLOAD% mkdir %DOWNLOAD%
+if not exist %BUILD%    mkdir %BUILD%
+
+set CL=-nologo -MP -I%OUTPUT%\include\SDL2 -I%DEPEND%\include ^
+  -wd4244 -wd4267 -wd4996 -wd4305 -wd4311 -wd4005 -wd4018     ^
+  -wd4068 -wd4146 -wd4305 -wd4305 -wd4334 -wd4312 -wd4090
+set LINK=-nologo -incremental:no -libpath:%OUTPUT%\lib -libpath:%DEPEND%\lib
+
+call :get "https://sourceforge.net/projects/mpg123/files/mpg123/%MPG123_VERSION%/mpg123-%MPG123_VERSION%.tar.bz2"                      || exit /b 1
+
+rem
+rem downloading & unpacking
+rem
+
+call :get "https://zlib.net/zlib-%ZLIB_VERSION%.tar.xz"                                                                                || exit /b 1
+call :get "https://sourceforge.net/projects/bzip2/files/bzip2-%BZIP2_VERSION%.tar.gz"                                                  || exit /b 1
+call :get "https://tukaani.org/xz/xz-%XZ_VERSION%.tar.xz"                                                                              || exit /b 1
+call :get "https://github.com/facebook/zstd/releases/download/v%ZSTD_VERSION%/zstd-%ZSTD_VERSION%.tar.gz"                              || exit /b 1
+call :get "https://download.sourceforge.net/libpng/libpng-%LIBPNG_VERSION%.tar.xz"                                                     || exit /b 1
+call :get "https://sourceforge.net/projects/libjpeg-turbo/files/%LIBJPEGTURBO_VERSION%/libjpeg-turbo-%LIBJPEGTURBO_VERSION%.tar.gz"    || exit /b 1
+call :get "https://www.cl.cam.ac.uk/~mgk25/jbigkit/download/jbigkit-%JBIG_VERSION%.tar.gz"                                             || exit /b 1
+call :get "https://github.com/Esri/lerc/archive/refs/tags/v%LERC_VERSION%.tar.gz" lerc-%LERC_VERSION%.tar.gz                           || exit /b 1
+call :get "https://download.osgeo.org/libtiff/tiff-%TIFF_VERSION%.tar.gz"                                                              || exit /b 1
+call :get "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-%LIBWEBP_VERSION%.tar.gz"                    || exit /b 1
+call :get "https://download.savannah.gnu.org/releases/freetype/freetype-%FREETYPE_VERSION%.tar.xz"                                     || exit /b 1
+call :get "https://github.com/harfbuzz/harfbuzz/releases/download/%HARFBUZZ_VERSION%/harfbuzz-%HARFBUZZ_VERSION%.tar.xz"               || exit /b 1
+call :get "https://ftp.osuosl.org/pub/xiph/releases/ogg/libogg-%LIBOGG_VERSION%.tar.xz"                                                || exit /b 1
+call :get "https://ftp.osuosl.org/pub/xiph/releases/vorbis/libvorbis-%LIBVORBIS_VERSION%.tar.xz"                                       || exit /b 1
+call :get "https://ftp.osuosl.org/pub/xiph/releases/opus/opus-%OPUS_VERSION%.tar.gz"                                                   || exit /b 1
+call :get "https://ftp.osuosl.org/pub/xiph/releases/opus/opusfile-%OPUSFILE_VERSION%.tar.gz"                                           || exit /b 1
+call :get "https://github.com/xiph/flac/archive/refs/tags/%FLAC_VERSION%.tar.gz" flac-%FLAC_VERSION%.tar.gz                            || exit /b 1
+call :get "https://sourceforge.net/projects/mpg123/files/mpg123/%MPG123_VERSION%/mpg123-%MPG123_VERSION%.tar.bz2"                      || exit /b 1
+call :get "https://sourceforge.net/projects/modplug-xmms/files/libmodplug/%LIBMODPLUG_VERSION%/libmodplug-%LIBMODPLUG_VERSION%.tar.gz" || exit /b 1
+
+call :clone SDL       "https://github.com/libsdl-org/SDL"       || exit /b 1
+call :clone SDL_image "https://github.com/libsdl-org/SDL_image" || exit /b 1
+call :clone SDL_mixer "https://github.com/libsdl-org/SDL_mixer" || exit /b 1
+call :clone SDL_ttf   "https://github.com/libsdl-org/SDL_ttf"   || exit /b 1
+call :clone SDL_rtf   "https://github.com/libsdl-org/SDL_rtf"   || exit /b 1
+call :clone SDL_net   "https://github.com/libsdl-org/SDL_net"   || exit /b 1
+call :clone SDL_sound "https://github.com/icculus/SDL_sound"    || exit /b 1
+
+rem
+rem zlib
+rem
+
+cmake.exe -Wno-dev                           ^
+  -S %BUILD%\zlib-%ZLIB_VERSION%             ^
+  -B %BUILD%\zlib-%ZLIB_VERSION%             ^
+  -A x64 -T host=x64                         ^
+  -G %MSVC_GENERATOR%                        ^
+  -DCMAKE_INSTALL_PREFIX=%DEPEND%            ^
+  -DCMAKE_POLICY_DEFAULT_CMP0091=NEW         ^
+  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
+  || exit /b 1
+cmake.exe --build %BUILD%\zlib-%ZLIB_VERSION% --config Release --target install --parallel || exit /b 1
+
+rem
+rem bzip2
+rem
+
+pushd %BUILD%\bzip2-%BZIP2_VERSION%
+cl.exe -c -MP -MT -O2 -DNDEBUG blocksort.c huffman.c crctable.c randtable.c compress.c decompress.c bzlib.c        || exit /b 1
+lib.exe -nologo -out:libbz2.lib *.obj || exit /b 1
+copy /y libbz2.lib %DEPEND%\lib\
+copy /y bzlib.h    %DEPEND%\include\
+popd
+
+rem
+rem xz
+rem
+
+pushd %BUILD%\xz-%XZ_VERSION%
+msbuild.exe -nologo -v:m -p:configuration=ReleaseMT -p:platform=x64 windows\vs2019\liblzma.vcxproj || exit /b 1
+copy windows\vs2019\ReleaseMT\x64\liblzma\liblzma.lib %DEPEND%\lib\
+mkdir %DEPEND%\include\lzma
+copy /y src\liblzma\api\lzma.h   %DEPEND%\include\
+copy /y src\liblzma\api\lzma\*.h %DEPEND%\include\lzma\
+popd
+
+if not exist %DEPEND%\lib\pkgconfig mkdir %DEPEND%\lib\pkgconfig
+echo prefix=%CD%/%DEPEND%                                  > %DEPEND%\lib\pkgconfig\liblzma.pc
+echo exec_prefix=%CD%/%DEPEND%                             >> %DEPEND%\lib\pkgconfig\liblzma.pc
+echo libdir=%CD%/%DEPEND%/lib                              >> %DEPEND%\lib\pkgconfig\liblzma.pc
+echo includedir=%CD%/%DEPEND%/include                      >> %DEPEND%\lib\pkgconfig\liblzma.pc
+echo.                                                      >> %DEPEND%\lib\pkgconfig\liblzma.pc
+echo Name: liblzma                                         >> %DEPEND%\lib\pkgconfig\liblzma.pc
+echo Description: General purpose data compression library >> %DEPEND%\lib\pkgconfig\liblzma.pc
+echo URL: https://tukaani.org/xz/                          >> %DEPEND%\lib\pkgconfig\liblzma.pc
+echo Version: %XZ_VERSION%                                 >> %DEPEND%\lib\pkgconfig\liblzma.pc
+echo Cflags: -I${includedir}                               >> %DEPEND%\lib\pkgconfig\liblzma.pc
+echo Libs: -L${libdir} -llzma                              >> %DEPEND%\lib\pkgconfig\liblzma.pc
+
+rem
+rem zstd
+rem
+
+cmake.exe -Wno-dev                           ^
+  -S %BUILD%\zstd-%ZSTD_VERSION%\build\cmake ^
+  -B %BUILD%\zstd-%ZSTD_VERSION%             ^
+  -A x64 -T host=x64                         ^
+  -G %MSVC_GENERATOR%                        ^
+  -DCMAKE_INSTALL_PREFIX=%DEPEND%            ^
+  -DCMAKE_POLICY_DEFAULT_CMP0091=NEW         ^
+  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
+  -DZSTD_BUILD_PROGRAMS=OFF                  ^
+  -DZSTD_BUILD_STATIC=ON                     ^
+  -DZSTD_BUILD_SHARED=OFF                    ^
+  -DZSTD_USE_STATIC_RUNTIME=ON               ^
+  || exit /b 1
+cmake.exe --build %BUILD%\zstd-%ZSTD_VERSION% --config Release --target install --parallel || exit /b 1
+
+rem
+rem libpng
+rem dependencies: zlib
+rem
+
+cmake.exe -Wno-dev                           ^
+  -S %BUILD%\libpng-%LIBPNG_VERSION%         ^
+  -B %BUILD%\libpng-%LIBPNG_VERSION%         ^
+  -A x64 -T host=x64                         ^
+  -G %MSVC_GENERATOR%                        ^
+  -DCMAKE_INSTALL_PREFIX=%DEPEND%            ^
+  -DCMAKE_POLICY_DEFAULT_CMP0091=NEW         ^
+  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
+  -DPNG_SHARED=OFF                           ^
+  -DPNG_TESTS=OFF                            ^
+  || exit /b 1
+cmake.exe --build %BUILD%\libpng-%LIBPNG_VERSION% --config Release --target install --parallel || exit /b 1
+
+rem
+rem libjpeg-turbo
+rem
+
+cmake.exe -Wno-dev                                ^
+  -S %BUILD%\libjpeg-turbo-%LIBJPEGTURBO_VERSION% ^
+  -B %BUILD%\libjpeg-turbo-%LIBJPEGTURBO_VERSION% ^
+  -A x64 -T host=x64                              ^
+  -G %MSVC_GENERATOR%                             ^
+  -DCMAKE_INSTALL_PREFIX=%DEPEND%                 ^
+  -DCMAKE_POLICY_DEFAULT_CMP0091=NEW              ^
+  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded      ^
+  -DENABLE_SHARED=OFF                             ^
+  -DENABLE_STATIC=ON                              ^
+  -DREQUIRE_SIMD=ON                               ^
+  -DWITH_TURBOJPEG=OFF                            ^
+  || exit /b 1
+cmake.exe --build %BUILD%\libjpeg-turbo-%LIBJPEGTURBO_VERSION% --config Release --target install || exit /b 1
+
+rem
+rem libwebp
+rem
+
+cmake.exe -Wno-dev                           ^
+  -S %BUILD%\libwebp-%LIBWEBP_VERSION%       ^
+  -B %BUILD%\libwebp-%LIBWEBP_VERSION%       ^
+  -A x64 -T host=x64                         ^
+  -G %MSVC_GENERATOR%                        ^
+  -DCMAKE_INSTALL_PREFIX=%DEPEND%            ^
+  -DCMAKE_POLICY_DEFAULT_CMP0091=NEW         ^
+  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
+  -DWEBP_BUILD_ANIM_UTILS=OFF                ^
+  -DWEBP_BUILD_CWEBP=OFF                     ^
+  -DWEBP_BUILD_DWEBP=OFF                     ^
+  -DWEBP_BUILD_GIF2WEBP=OFF                  ^
+  -DWEBP_BUILD_IMG2WEBP=OFF                  ^
+  -DWEBP_BUILD_VWEBP=OFF                     ^
+  -DWEBP_BUILD_WEBPINFO=OFF                  ^
+  -DWEBP_BUILD_WEBPMUX=OFF                   ^
+  -DWEBP_BUILD_EXTRAS=OFF                    ^
+  || exit /b 1
+cmake.exe --build %BUILD%\libwebp-%LIBWEBP_VERSION% --config Release --target install --parallel || exit /b 1
+
+rem
+rem jbig
+rem
+
+pushd %BUILD%\jbigkit-%JBIG_VERSION%
+cl.exe -c -MP -MT -O2 libjbig\jbig.c libjbig\jbig_ar.c || exit /b 1
+lib.exe -nologo -out:jbig.lib *.obj || exit /b 1
+copy /y jbig.lib %DEPEND%\lib\
+copy /y libjbig\jbig.h    %DEPEND%\include\
+copy /y libjbig\jbig_ar.h %DEPEND%\include\
+popd
+
+rem
+rem lerc
+rem
+
+git apply --directory=build/lerc-%LERC_VERSION% lerc.patch || exit /b 1
+pushd %BUILD%\lerc-%LERC_VERSION%
+cl.exe -c -MP -MT -O2 -EHsc -DNDEBUG -DLERC_STATIC -Iinclude src/LercLib/*.cpp src/LercLib/Lerc1Decode/*.cpp || exit /b 1
+lib.exe -nologo -out:lerc.lib *.obj || exit /b 1
+copy /y lerc.lib                         %DEPEND%\lib\
+copy /y src\LercLib\include\Lerc_c_api.h %DEPEND%\include\
+popd
+
+rem
+rem tiff
+rem dependencies: libjpeg-turbo, libwebp, jbig, lerc, zstd, xz, zlib
+rem
+
+cmake.exe -Wno-dev                           ^
+  -S %BUILD%\tiff-%TIFF_VERSION%             ^
+  -B %BUILD%\tiff-%TIFF_VERSION%             ^
+  -A x64 -T host=x64                         ^
+  -G %MSVC_GENERATOR%                        ^
+  -DCMAKE_INSTALL_PREFIX=%DEPEND%            ^
+  -DCMAKE_POLICY_DEFAULT_CMP0091=NEW         ^
+  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
+  -DCMAKE_C_FLAGS=-DLZMA_API_STATIC          ^
+  -Dzlib=ON                                  ^
+  -Djpeg=ON                                  ^
+  -Dlzma=ON                                  ^
+  -Dzstd=ON                                  ^
+  -Dwebp=ON                                  ^
+  -Djbig=ON                                  ^
+  -Dlerc=ON                                  ^
+  -DBUILD_SHARED_LIBS=OFF                    ^
+  || exit /b 1
+cmake.exe --build %BUILD%\tiff-%TIFF_VERSION% --config Release --target install --parallel || exit /b 1
+
+rem
+rem freetype
+rem dependencies: zlib, bzip2, libpng
+rem
+
+cmake.exe -Wno-dev                             ^
+  -S %BUILD%\freetype-%FREETYPE_VERSION%       ^
+  -B %BUILD%\freetype-%FREETYPE_VERSION%\build ^
+  -A x64 -T host=x64                           ^
+  -G %MSVC_GENERATOR%                          ^
+  -DCMAKE_INSTALL_PREFIX=%DEPEND%              ^
+  -DCMAKE_POLICY_DEFAULT_CMP0091=NEW           ^
+  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded   ^
+  -DBUILD_SHARED_LIBS=OFF                      ^
+  || exit /b 1
+cmake.exe --build %BUILD%\freetype-%FREETYPE_VERSION%\build --config Release --target install --parallel || exit /b 1
+
+rem
+rem harfbuzz
+rem dependencies: freetype
+rem
+
+cmake.exe -Wno-dev                           ^
+  -S %BUILD%\harfbuzz-%HARFBUZZ_VERSION%     ^
+  -B %BUILD%\harfbuzz-%HARFBUZZ_VERSION%     ^
+  -A x64 -T host=x64                         ^
+  -G %MSVC_GENERATOR%                        ^
+  -DCMAKE_INSTALL_PREFIX=%DEPEND%            ^
+  -DCMAKE_POLICY_DEFAULT_CMP0091=NEW         ^
+  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
+  -DBUILD_SHARED_LIBS=OFF                    ^
+  -DHB_HAVE_FREETYPE=ON                      ^
+  || exit /b 1
+cmake.exe --build %BUILD%\harfbuzz-%HARFBUZZ_VERSION% --config Release --target install --parallel || exit /b 1
+
+rem
+rem libogg
+rem
+
+cmake.exe -Wno-dev                           ^
+  -S %BUILD%\libogg-%LIBOGG_VERSION%         ^
+  -B %BUILD%\libogg-%LIBOGG_VERSION%         ^
+  -A x64 -T host=x64                         ^
+  -G %MSVC_GENERATOR%                        ^
+  -DCMAKE_INSTALL_PREFIX=%DEPEND%            ^
+  -DCMAKE_POLICY_DEFAULT_CMP0091=NEW         ^
+  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
+  -DBUILD_SHARED_LIBS=OFF                    ^
+  || exit /b 1
+cmake.exe --build %BUILD%\libogg-%LIBOGG_VERSION% --config Release --target install --parallel || exit /b 1
+
+rem
+rem libvorbis
+rem dependencies: libogg
+rem
+
+cmake.exe -Wno-dev                           ^
+  -S %BUILD%\libvorbis-%LIBVORBIS_VERSION%   ^
+  -B %BUILD%\libvorbis-%LIBVORBIS_VERSION%   ^
+  -A x64 -T host=x64                         ^
+  -G %MSVC_GENERATOR%                        ^
+  -DCMAKE_INSTALL_PREFIX=%DEPEND%            ^
+  -DCMAKE_POLICY_DEFAULT_CMP0091=NEW         ^
+  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
+  -DBUILD_SHARED_LIBS=OFF                    ^
+  || exit /b 1
+cmake.exe --build %BUILD%\libvorbis-%LIBVORBIS_VERSION% --config Release --target install --parallel || exit /b 1
+
+rem
+rem opus
+rem dependencies: libogg
+rem
+
+echo. > %BUILD%\opus-%OPUS_VERSION%\opus_buildtype.cmake
+cmake.exe -Wno-dev                           ^
+  -S %BUILD%\opus-%OPUS_VERSION%             ^
+  -B %BUILD%\opus-%OPUS_VERSION%             ^
+  -A x64 -T host=x64                         ^
+  -G %MSVC_GENERATOR%                        ^
+  -DCMAKE_INSTALL_PREFIX=%DEPEND%            ^
+  -DCMAKE_POLICY_DEFAULT_CMP0091=NEW         ^
+  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
+  -DBUILD_SHARED_LIBS=OFF                    ^
+  || exit /b 1
+cmake.exe --build %BUILD%\opus-%OPUS_VERSION% --config Release --target install --parallel || exit /b 1
+
+rem
+rem opusfile
+rem dependencies: opus
+rem
+
+pushd %BUILD%\opusfile-%OPUSFILE_VERSION%
+cl.exe -c -MP -MT -O2 -DNDEBUG -Iinclude -I%DEPEND%\include\opus ^
+  src\info.c src\internal.c src\opusfile.c src\stream.c ^
+  || exit /b 1
+lib.exe -nologo -out:opusfile.lib *.obj || exit /b 1
+copy /y opusfile.lib       %DEPEND%\lib\
+copy /y include\opusfile.h %DEPEND%\include\opus\
+popd
+
+rem
+rem flac
+rem dependencies: libogg
+rem
+
+cmake.exe -Wno-dev                           ^
+  -S %BUILD%\flac-%FLAC_VERSION%             ^
+  -B %BUILD%\flac-%FLAC_VERSION%             ^
+  -A x64 -T host=x64                         ^
+  -G %MSVC_GENERATOR%                        ^
+  -DCMAKE_INSTALL_PREFIX=%DEPEND%            ^
+  -DCMAKE_POLICY_DEFAULT_CMP0091=NEW         ^
+  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
+  -DBUILD_SHARED_LIBS=OFF                    ^
+  -DBUILD_CXXLIBS=OFF                        ^
+  -DBUILD_EXAMPLES=OFF                       ^
+  || exit /b 1
+cmake.exe --build %BUILD%\flac-%FLAC_VERSION% --config Release --target install --parallel || exit /b 1
+
+rem
+rem mpg123
+rem
+
+copy %BUILD%\mpg123-%MPG123_VERSION%\ports\cmake\cmake\CheckCPUArch.c.in %BUILD%\mpg123-%MPG123_VERSION%\ports\cmake\
+cmake.exe -Wno-dev                               ^
+  -S %BUILD%\mpg123-%MPG123_VERSION%\ports\cmake ^
+  -B %BUILD%\mpg123-%MPG123_VERSION%             ^
+  -A x64 -T host=x64                             ^
+  -G %MSVC_GENERATOR%                            ^
+  -DCMAKE_INSTALL_PREFIX=%DEPEND%                ^
+  -DCMAKE_POLICY_DEFAULT_CMP0091=NEW             ^
+  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded     ^
+  -DBUILD_SHARED_LIBS=OFF                        ^
+  || exit /b 1
+cmake.exe --build %BUILD%\mpg123-%MPG123_VERSION% --config Release --target install --parallel || exit /b 1
+
+rem
+rem libmodplug
+rem
+
+pushd %BUILD%\libmodplug-%LIBMODPLUG_VERSION%
+cl.exe -c -MP -MT -O2 -DNDEBUG -DMODPLUG_BUILD -DMODPLUG_STATIC -I src\libmodplug src\*.cpp || exit /b 1
+lib.exe -nologo -out:libmodplug.lib *.obj || exit /b 1
+mkdir %DEPEND%\include\libmodplug
+copy /y libmodplug.lib %DEPEND%\lib\
+copy /y src\modplug.h  %DEPEND%\include\libmodplug\
+popd
+
+rem
+rem SDL
+rem
+
+cmake.exe -Wno-dev                           ^
+  -S %BUILD%\SDL                             ^
+  -B %BUILD%\SDL\build                       ^
+  -A x64 -T host=x64                         ^
+  -G %MSVC_GENERATOR%                        ^
+  -DCMAKE_INSTALL_PREFIX=%OUTPUT%            ^
+  -DCMAKE_POLICY_DEFAULT_CMP0091=NEW         ^
+  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
+  -DBUILD_SHARED_LIBS=ON                     ^
+  || exit /b 1
+cmake.exe --build %BUILD%\SDL\build --config Release --target install --parallel || exit /b 1
+pushd %BUILD%\SDL
+cl.exe -c -MP -MT -O2 -Zl -DDLL_EXPORT -DNDEBUG -DWIN32 -I%OUTPUT%\include\SDL2 src\main\windows\SDL_windows_main.c || exit /b 1
+lib.exe -nologo -out:SDL2main.lib SDL_windows_main.obj || exit /b 1
+del /q SDL_windows_main.obj
+move /y SDL2main.lib %OUTPUT%\lib\
+popd
+
+rem
+rem SDL_image
+rem dependencies: tiff, libjpeg-turbo, libpng, libwebp
+rem
+
+pushd %BUILD%\SDL_image
+rc.exe -nologo version.rc || exit /b 1
+cl.exe -MP -MT -O2 -DDLL_EXPORT -DNDEBUG -DWIN32 ^
+  -DLOAD_BMP -DLOAD_GIF -DLOAD_JPG -DLOAD_LBM -DLOAD_PCX -DLOAD_PNG -DLOAD_PNM -D LOAD_QOI -DLOAD_SVG -DLOAD_TGA -DLOAD_TIF -DLOAD_WEBP -DLOAD_XCF -DLOAD_XPM -DLOAD_XV ^
+  IMG.c IMG_bmp.c IMG_gif.c IMG_jpg.c IMG_lbm.c IMG_pcx.c IMG_png.c IMG_pnm.c IMG_qoi.c IMG_svg.c IMG_tga.c IMG_tif.c IMG_webp.c IMG_xcf.c IMG_xpm.c IMG_xv.c version.res ^
+  -link -dll -opt:icf -opt:ref -out:SDL2_image.dll ^
+  SDL2.lib tiff.lib jpeg-static.lib libpng16_static.lib webp.lib jbig.lib lerc.lib zstd_static.lib liblzma.lib zlibstatic.lib ^
+  || exit /b 1
+copy /y SDL_image.h    %OUTPUT%\include\SDL2\
+copy /y SDL2_image.dll %OUTPUT%\bin\
+copy /y SDL2_image.lib %OUTPUT%\lib\
+popd	
+
+rem
+rem SDL_mixer
+rem dependencies: libmodplug, mpg123, flac, opusfile, vorbis
+rem
+
+pushd %BUILD%\SDL_mixer
+rc.exe -nologo version.rc || exit /b 1
+cl.exe -MP -MT -O2 -DDLL_EXPORT -DNDEBUG -DWIN32 -DMODPLUG_BUILD -DMODPLUG_STATIC -DFLAC__NO_DLL ^
+  -DMUSIC_WAV -DMUSIC_MOD_MODPLUG -DMUSIC_OGG -DMUSIC_OPUS -DMUSIC_FLAC -DMUSIC_MP3_MPG123 -DMUSIC_MID_TIMIDITY -DMUSIC_MID_NATIVE ^
+  src\*.c src\codecs\*.c src\codecs\timidity\*.c src\codecs\native_midi\native_midi_common.c src\codecs\native_midi\native_midi_win32.c version.res ^
+  -Iinclude -Isrc -Isrc\codecs -I%DEPEND%\include\opus ^
+  -link -dll -opt:icf -opt:ref -out:SDL2_mixer.dll ^
+  SDL2.lib libmodplug.lib mpg123.lib flac.lib opusfile.lib opus.lib vorbisfile.lib vorbis.lib ogg.lib winmm.lib user32.lib shlwapi.lib ^
+  || exit /b 1
+copy /y include\SDL_mixer.h %OUTPUT%\include\SDL2\
+copy /y SDL2_mixer.dll      %OUTPUT%\bin\
+copy /y SDL2_mixer.lib      %OUTPUT%\lib\
+popd	
+
+rem
+rem SDL_ttf
+rem dependencies: freetype, harfbuzz
+rem
+
+pushd %BUILD%\SDL_ttf
+rc.exe -nologo version.rc || exit /b 1
+cl.exe -MP -MT -O2 -DDLL_EXPORT -DNDEBUG -DWIN32 -DTTF_USE_HARFBUZZ=1 ^
+  SDL_ttf.c version.res ^
+  -I%DEPEND%\include\freetype2 -I%DEPEND%\include\harfbuzz ^
+  -link -dll -opt:icf -opt:ref -out:SDL2_ttf.dll ^
+  SDL2.lib harfbuzz.lib freetype.lib libpng16_static.lib libbz2.lib zlibstatic.lib ^
+  || exit /b 1
+copy /y SDL_ttf.h    %OUTPUT%\include\SDL2\
+copy /y SDL2_ttf.dll %OUTPUT%\bin\
+copy /y SDL2_ttf.lib %OUTPUT%\lib\
+popd	
+
+rem
+rem SDL_rtf
+rem
+
+pushd %BUILD%\SDL_rtf
+rc.exe -nologo version.rc || exit /b 1
+cl.exe -MP -MT -O2 -DDLL_EXPORT -DNDEBUG -DWIN32 ^
+  rtfactn.c rtfreadr.c SDL_rtfreadr.c SDL_rtf.c version.res ^
+  -link -dll -opt:icf -opt:ref -out:SDL2_rtf.dll SDL2.lib ^
+  || exit /b 1
+copy /y SDL_rtf.h    %OUTPUT%\include\SDL2\
+copy /y SDL2_rtf.dll %OUTPUT%\bin\
+copy /y SDL2_rtf.lib %OUTPUT%\lib\
+popd	
+
+rem
+rem SDL_net
+rem
+
+pushd %BUILD%\SDL_net
+rc.exe -nologo version.rc || exit /b 1
+cl.exe -MP -MT -O2 -DDLL_EXPORT -DNDEBUG -DWIN32 ^
+  SDLnet.c SDLnetselect.c SDLnetTCP.c SDLnetUDP.c version.res ^
+  -link -dll -opt:icf -opt:ref -out:SDL2_net.dll SDL2.lib ws2_32.lib iphlpapi.lib ^
+  || exit /b 1
+copy /y SDL_net.h    %OUTPUT%\include\SDL2\
+copy /y SDL2_net.dll %OUTPUT%\bin\
+copy /y SDL2_net.lib %OUTPUT%\lib\
+popd
+
+rem
+rem SDL_sound
+rem
+
+cmake.exe -Wno-dev                                  ^
+  -S %BUILD%\SDL_sound                              ^
+  -B %BUILD%\SDL_sound                              ^
+  -A x64 -T host=x64                                ^
+  -G %MSVC_GENERATOR%                               ^
+  -DCMAKE_INSTALL_PREFIX=%OUTPUT%                   ^
+  -DCMAKE_POLICY_DEFAULT_CMP0091=NEW                ^
+  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded        ^
+  -DCMAKE_SHARED_LINKER_FLAGS=%OUTPUT%\lib\SDL2.lib ^
+  -DSDLSOUND_BUILD_STATIC=OFF                       ^
+  -DSDLSOUND_BUILD_TEST=OFF                         ^
+ || exit /b 1
+cmake.exe --build %BUILD%\SDL_sound --config Release --target install --parallel || exit /b 1
+
+rem
+rem output commits
+rem
+
+set /p SDL_COMMIT=<%BUILD%\SDL\.git\refs\heads\main
+set /p SDL_IMAGE_COMMIT=<%BUILD%\SDL_image\.git\refs\heads\main
+set /p SDL_MIXER_COMMIT=<%BUILD%\SDL_mixer\.git\refs\heads\master
+set /p SDL_SOUND_COMMIT=<%BUILD%\SDL_sound\.git\refs\heads\main
+set /p SDL_TTF_COMMIT=<%BUILD%\SDL_ttf\.git\refs\heads\main
+set /p SDL_RTF_COMMIT=<%BUILD%\SDL_rtf\.git\refs\heads\main
+set /p SDL_NET_COMMIT=<%BUILD%\SDL_net\.git\refs\heads\main
+
+echo SDL commit %SDL_COMMIT% > %OUTPUT%\commits.txt
+echo SDL_image commit %SDL_IMAGE_COMMIT% >> %OUTPUT%\commits.txt
+echo SDL_mixer commit %SDL_MIXER_COMMIT% >> %OUTPUT%\commits.txt
+echo SDL_sound commit %SDL_SOUND_COMMIT% >> %OUTPUT%\commits.txt
+echo SDL_ttf commit %SDL_TTF_COMMIT% >> %OUTPUT%\commits.txt
+echo SDL_rtf commit %SDL_RTF_COMMIT% >> %OUTPUT%\commits.txt
+echo SDL_net commit %SDL_NET_COMMIT% >> %OUTPUT%\commits.txt
+
+rem
+rem GitHub actions stuff
+rem
+
+if "%GITHUB_WORKFLOW%" neq "" (
+
+  for /F "skip=1" %%D in ('WMIC OS GET LocalDateTime') do (set LDATE=%%D & goto :dateok)
+  :dateok
+  set OUTPUT_DATE=%LDATE:~0,4%-%LDATE:~4,2%-%LDATE:~6,2%
+
+  echo Creating %OUTPUT%.zip
+  %SZIP% a -y -r -mx=9 SDL2-!OUTPUT_DATE!.zip SDL2 || exit /b 1
+
+  echo ::set-output name=OUTPUT_DATE::!OUTPUT_DATE!
+
+  echo ::set-output name=SDL_COMMIT::%SDL_COMMIT%
+  echo ::set-output name=SDL_IMAGE_COMMIT::%SDL_IMAGE_COMMIT%
+  echo ::set-output name=SDL_MIXER_COMMIT::%SDL_MIXER_COMMIT%
+  echo ::set-output name=SDL_SOUND_COMMIT::%SDL_SOUND_COMMIT%
+  echo ::set-output name=SDL_TTF_COMMIT::%SDL_TTF_COMMIT%
+  echo ::set-output name=SDL_RTF_COMMIT::%SDL_RTF_COMMIT%
+  echo ::set-output name=SDL_NET_COMMIT::%SDL_NET_COMMIT%
+)
+
+rem
+rem done!
+rem
+
+goto :eof
+
+rem
+rem call :get "https://..." [optional-filename.tar.gz]
+rem
+
+:get
+if "%2" equ "" (
+  set ARCHIVE=%DOWNLOAD%\%~nx1
+) else (
+  set ARCHIVE=%DOWNLOAD%\%2
+)
+if not exist %ARCHIVE% (
+  echo Downloading %ARCHIVE%
+  curl.exe -sfLo %ARCHIVE% %1 || exit /b 1
+)
+for %%N in ("%ARCHIVE%") do set NAME=%%~nN
+if exist %NAME% (
+  echo Removing %NAME%
+  rd /s /q %NAME%
+)
+echo Unpacking %ARCHIVE%
+pushd %BUILD%
+%SZIP% x -bb0 -y %ARCHIVE% -so | %SZIP% x -bb0 -y -ttar -si -aoa 1>nul 2>nul || exit /b 1
+if exist pax_global_header del /q pax_global_header
+popd
+goto :eof
+
+rem
+rem call :clone output_folder "https://..."
+rem
+
+:clone
+pushd %BUILD%
+if exist %1 (
+  echo Updating %1
+  pushd %1
+  call git clean --quiet -fdx
+  call git pull --quiet --force --no-tags --depth 1 || exit /b 1
+  popd
+) else (
+  echo Cloning %1
+  call git clone --quiet --single-branch --no-tags --depth 1 %2 %1 || exit /b 1
+)
+popd
+goto :eof
