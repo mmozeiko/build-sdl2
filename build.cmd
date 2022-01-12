@@ -644,7 +644,7 @@ if "%GITHUB_WORKFLOW%" neq "" (
   set OUTPUT_DATE=%LDATE:~0,4%-%LDATE:~4,2%-%LDATE:~6,2%
 
   echo Creating %OUTPUT%.zip
-  %SZIP% a -y -r -mx=9 SDL2-!OUTPUT_DATE!.zip SDL2 || exit /b 1
+  %SZIP% a -y -r -mx=9 "-x^!build" SDL2-!OUTPUT_DATE!.zip SDL2 || exit /b 1
 
   echo ::set-output name=OUTPUT_DATE::!OUTPUT_DATE!
 
