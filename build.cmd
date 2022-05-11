@@ -10,6 +10,7 @@ rem
 
 set NASM_VERSION=2.15.05
 set YASM_VERSION=1.3.0
+set NINJA_VERSION=1.10.2
 
 set ZLIB_VERSION=1.2.12
 set BZIP2_VERSION=1.0.6
@@ -21,8 +22,11 @@ set JBIG_VERSION=2.1
 set LERC_VERSION=3.0
 set TIFF_VERSION=4.3.0
 set LIBWEBP_VERSION=1.2.2
-set FREETYPE_VERSION=2.12.0
-set HARFBUZZ_VERSION=4.2.0
+set DAV1D_VERSION=1.0.0
+set LIBAVIF_VERSION=0.10.1
+set LIBJXL_VERSION=0.6.1
+set FREETYPE_VERSION=2.12.1
+set HARFBUZZ_VERSION=4.2.1
 set LIBOGG_VERSION=1.3.5
 set LIBVORBIS_VERSION=1.3.7
 set OPUS_VERSION=1.3.1
@@ -50,6 +54,22 @@ where /q cmake.exe || (
   exit /b 1
 )
 
+where /q python.exe || (
+  echo ERROR: "python.exe" not found
+  exit /b 1
+)
+
+where /q pip.exe || (
+  echo ERROR: "pip.exe" not found
+  exit /b 1
+)
+
+pip install meson 1>nul 2>nul || exit /b 1
+
+rem
+rem 7-Zip
+rem
+
 if exist "%ProgramFiles%\7-Zip\7z.exe" (
   set SZIP="%ProgramFiles%\7-Zip\7z.exe"
 ) else (
@@ -61,7 +81,7 @@ if exist "%ProgramFiles%\7-Zip\7z.exe" (
 )
 
 rem
-rem yasm.exe & nasm.exe
+rem yasm.exe & nasm.exe & ninja.exe
 rem
 
 where /q nasm.exe || (
@@ -85,6 +105,15 @@ where /q yasm.exe || (
   )
 )
 yasm.exe --version || exit /b 1
+
+where /q ninja.exe || (
+  echo Downloading ninja.exe
+  curl.exe -sfLO "https://github.com/ninja-build/ninja/releases/download/v%NINJA_VERSION%/ninja-win.zip"
+  %SZIP% x -bb0 -y ninja-win.zip 1>nul 2>nul || exit /b 1
+  del "ninja-win.zip"
+)
+ninja.exe --version || exit /b 1
+
 
 rem
 rem MSVC environment
@@ -121,12 +150,11 @@ if not exist %DEPEND%   mkdir %DEPEND%
 if not exist %DOWNLOAD% mkdir %DOWNLOAD%
 if not exist %BUILD%    mkdir %BUILD%
 
-set CL=-nologo -MP -I%OUTPUT%\include\SDL2 -I%DEPEND%\include ^
-  -wd4244 -wd4267 -wd4996 -wd4305 -wd4311 -wd4005 -wd4018     ^
-  -wd4068 -wd4146 -wd4305 -wd4305 -wd4334 -wd4312 -wd4090
-set LINK=-nologo -incremental:no -libpath:%OUTPUT%\lib -libpath:%DEPEND%\lib
-
-call :get "https://sourceforge.net/projects/mpg123/files/mpg123/%MPG123_VERSION%/mpg123-%MPG123_VERSION%.tar.bz2"                      || exit /b 1
+set CL=-MP -I%OUTPUT%\include\SDL2 -I%DEPEND%\include     ^
+  -wd4244 -wd4267 -wd4996 -wd4305 -wd4311 -wd4005 -wd4018 ^
+  -wd4068 -wd4146 -wd4305 -wd4305 -wd4334 -wd4312 -wd4090 ^
+  -wd4180 -wd4806 -wd4646 -wd4805
+set LINK=-incremental:no -libpath:%OUTPUT%\lib -libpath:%DEPEND%\lib
 
 rem
 rem downloading & unpacking
@@ -142,6 +170,9 @@ call :get "https://www.cl.cam.ac.uk/~mgk25/jbigkit/download/jbigkit-%JBIG_VERSIO
 call :get "https://github.com/Esri/lerc/archive/refs/tags/v%LERC_VERSION%.tar.gz" lerc-%LERC_VERSION%.tar.gz                           || exit /b 1
 call :get "https://download.osgeo.org/libtiff/tiff-%TIFF_VERSION%.tar.gz"                                                              || exit /b 1
 call :get "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-%LIBWEBP_VERSION%.tar.gz"                    || exit /b 1
+call :get "https://code.videolan.org/videolan/dav1d/-/archive/%DAV1D_VERSION%/dav1d-%DAV1D_VERSION%.tar.bz2"                           || exit /b 1
+call :get "https://github.com/AOMediaCodec/libavif/archive/refs/tags/v%LIBAVIF_VERSION%.tar.gz" libavif-%LIBAVIF_VERSION%.tar.gz       || exit /b 1
+call :get "https://github.com/libjxl/libjxl/archive/refs/tags/v%LIBJXL_VERSION%.tar.gz" libjxl-%LIBJXL_VERSION%.tar.gz                 || exit /b 1
 call :get "https://download.savannah.gnu.org/releases/freetype/freetype-%FREETYPE_VERSION%.tar.xz"                                     || exit /b 1
 call :get "https://github.com/harfbuzz/harfbuzz/releases/download/%HARFBUZZ_VERSION%/harfbuzz-%HARFBUZZ_VERSION%.tar.xz"               || exit /b 1
 call :get "https://ftp.osuosl.org/pub/xiph/releases/ogg/libogg-%LIBOGG_VERSION%.tar.xz"                                                || exit /b 1
@@ -151,6 +182,26 @@ call :get "https://ftp.osuosl.org/pub/xiph/releases/opus/opusfile-%OPUSFILE_VERS
 call :get "https://github.com/xiph/flac/archive/refs/tags/%FLAC_VERSION%.tar.gz" flac-%FLAC_VERSION%.tar.gz                            || exit /b 1
 call :get "https://sourceforge.net/projects/mpg123/files/mpg123/%MPG123_VERSION%/mpg123-%MPG123_VERSION%.tar.bz2"                      || exit /b 1
 call :get "https://sourceforge.net/projects/modplug-xmms/files/libmodplug/%LIBMODPLUG_VERSION%/libmodplug-%LIBMODPLUG_VERSION%.tar.gz" || exit /b 1
+
+rem libjxl dependencies
+
+set BROTLI_COMMIT=35ef5c5
+set HIGHWAY_COMMIT=e239774
+set LODEPNG_COMMIT=48e5364
+set SKCMS_COMMIT=6437475
+
+rd /s /q %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\brotli  1>nul 2>nul
+rd /s /q %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\highway 1>nul 2>nul
+rd /s /q %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\lodepng 1>nul 2>nul
+
+call :get "https://github.com/google/brotli/tarball/%BROTLI_COMMIT%"           google-brotli-%BROTLI_COMMIT%.tar.gz     || exit /b 1
+call :get "https://github.com/google/highway/tarball/%HIGHWAY_COMMIT%"         google-highway-%HIGHWAY_COMMIT%.tar.gz   || exit /b 1
+call :get "https://github.com/lvandeve/lodepng/tarball/%LODEPNG_COMMIT%"       lvandeve-lodepng-%LODEPNG_COMMIT%.tar.gz || exit /b 1
+call :get "https://skia.googlesource.com/skcms/+archive/%SKCMS_COMMIT%.tar.gz" skcms-%SKCMS_COMMIT%.tar.gz %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\skcms || exit /b 1
+
+move %BUILD%\google-brotli-%BROTLI_COMMIT%     %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\brotli  1>nul 2>nul
+move %BUILD%\google-highway-%HIGHWAY_COMMIT%   %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\highway 1>nul 2>nul
+move %BUILD%\lvandeve-lodepng-%LODEPNG_COMMIT% %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\lodepng 1>nul 2>nul
 
 call :clone SDL       "https://github.com/libsdl-org/SDL"       || exit /b 1
 call :clone SDL_image "https://github.com/libsdl-org/SDL_image" || exit /b 1
@@ -341,6 +392,85 @@ cmake.exe -Wno-dev                           ^
 cmake.exe --build %BUILD%\tiff-%TIFF_VERSION% --config Release --target install --parallel || exit /b 1
 
 rem
+rem dav1d
+rem
+
+pushd %BUILD%\dav1d-%DAV1D_VERSION%
+
+mkdir build
+cd build
+
+meson ^
+  --prefix=%DEPEND% ^
+  --default-library=static ^
+  --buildtype release ^
+  -Db_ndebug=true ^
+  -Db_vscrt=mt ^
+  -Denable_tools=false ^
+  -Denable_tests=false ^
+  -Dlogging=false ^
+  .. || exit /b 1
+ninja install || exit /b 1
+
+popd
+
+rem
+rem libavif
+rem dependencies: dav1d
+rem
+
+cmake.exe -Wno-dev                           ^
+  -S %BUILD%\libavif-%LIBAVIF_VERSION%       ^
+  -B %BUILD%\libavif-%LIBAVIF_VERSION%\build ^
+  -A x64 -T host=x64                         ^
+  -G %MSVC_GENERATOR%                        ^
+  -DCMAKE_INSTALL_PREFIX=%DEPEND%            ^
+  -DCMAKE_POLICY_DEFAULT_CMP0091=NEW         ^
+  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
+  -DBUILD_SHARED_LIBS=OFF                    ^
+  -DAVIF_ENABLE_WERROR=OFF                   ^
+  -DAVIF_CODEC_DAV1D=ON                      ^
+  -DDAV1D_LIBRARIES=%DEPEND%\lib             ^
+  -DDAV1D_LIBRARY=%DEPEND%\lib\libdav1d.a    ^
+  || exit /b 1
+cmake.exe --build %BUILD%\libavif-%LIBAVIF_VERSION%\build --config Release --target install --parallel || exit /b 1
+
+rem
+rem libjxl
+rem
+
+set CFLAGS=-DJXL_STATIC_DEFINE
+set CXXFLAGS=-DJXL_STATIC_DEFINE
+
+cmake.exe -Wno-dev                           ^
+  -S %BUILD%\libjxl-%LIBJXL_VERSION%         ^
+  -B %BUILD%\libjxl-%LIBJXL_VERSION%\build   ^
+  -A x64 -T host=x64                         ^
+  -G %MSVC_GENERATOR%                        ^
+  -DCMAKE_INSTALL_PREFIX=%DEPEND%            ^
+  -DCMAKE_POLICY_DEFAULT_CMP0091=NEW         ^
+  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
+  -DBUILD_SHARED_LIBS=OFF                    ^
+  -DBUILD_TESTING=OFF                        ^
+  -DJPEGXL_STATIC=true                       ^
+  -DJPEGXL_WARNINGS_AS_ERRORS=false          ^
+  -DJPEGXL_ENABLE_TOOLS=false                ^
+  -DJPEGXL_ENABLE_MANPAGES=false             ^
+  -DJPEGXL_ENABLE_BENCHMARK=false            ^
+  -DJPEGXL_ENABLE_EXAMPLES=false             ^
+  -DJPEGXL_ENABLE_VIEWERS=false              ^
+  -DJPEGXL_ENABLE_JNI=false                  ^
+  -DJPEGXL_ENABLE_SJPEG=false                ^
+  -DJPEGXL_ENABLE_OPENEXR=false              ^
+  -DJPEGXL_ENABLE_PLUGINS=false              ^
+  -DJPEGXL_ENABLE_SKCMS=true                 ^
+  || exit /b 1
+cmake.exe --build %BUILD%\libjxl-%LIBJXL_VERSION%\build --config Release --target install --parallel || exit /b 1
+
+set CFLAGS=
+set CXXFLAGS=
+
+rem
 rem freetype
 rem dependencies: zlib, bzip2, libpng
 rem
@@ -512,16 +642,18 @@ popd
 
 rem
 rem SDL_image
-rem dependencies: tiff, libjpeg-turbo, libpng, libwebp
+rem dependencies: avif, libjxl, tiff, libjpeg-turbo, libpng, libwebp
 rem
 
 pushd %BUILD%\SDL_image
 rc.exe -nologo version.rc || exit /b 1
-cl.exe -MP -MT -O2 -DDLL_EXPORT -DNDEBUG -DWIN32 ^
-  -DLOAD_BMP -DLOAD_GIF -DLOAD_JPG -DLOAD_LBM -DLOAD_PCX -DLOAD_PNG -DLOAD_PNM -D LOAD_QOI -DLOAD_SVG -DLOAD_TGA -DLOAD_TIF -DLOAD_WEBP -DLOAD_XCF -DLOAD_XPM -DLOAD_XV ^
-  IMG.c IMG_bmp.c IMG_gif.c IMG_jpg.c IMG_lbm.c IMG_pcx.c IMG_png.c IMG_pnm.c IMG_qoi.c IMG_svg.c IMG_tga.c IMG_tif.c IMG_webp.c IMG_xcf.c IMG_xpm.c IMG_xv.c version.res ^
-  -link -dll -opt:icf -opt:ref -out:SDL2_image.dll ^
-  SDL2.lib tiff.lib jpeg-static.lib libpng16_static.lib webp.lib jbig.lib lerc.lib zstd_static.lib liblzma.lib zlibstatic.lib ^
+cl.exe -MP -MT -O2 -DDLL_EXPORT -DJXL_STATIC_DEFINE -DNDEBUG -DWIN32 ^
+  -DLOAD_AVIF -DLOAD_BMP -DLOAD_GIF -DLOAD_JPG -DLOAD_JXL -DLOAD_LBM -DLOAD_PCX -DLOAD_PNG -DLOAD_PNM -DLOAD_QOI ^
+  -DLOAD_SVG -DLOAD_TGA -DLOAD_TIF -DLOAD_WEBP -DLOAD_XCF -DLOAD_XPM -DLOAD_XV IMG.c IMG_avif.c IMG_bmp.c IMG_gif.c ^
+  IMG_jpg.c IMG_jxl.c IMG_lbm.c IMG_pcx.c IMG_png.c IMG_pnm.c IMG_qoi.c IMG_svg.c IMG_tga.c IMG_tif.c IMG_webp.c ^
+  IMG_xcf.c IMG_xpm.c IMG_xv.c version.res ^
+  -link -dll -opt:icf -opt:ref -out:SDL2_image.dll -libpath:%BUILD%\libjxl-%LIBJXL_VERSION%\build\third_party\brotli\Release ^
+  SDL2.lib avif.lib libdav1d.a jxl_dec-static.lib brotlidec-static.lib brotlicommon-static.lib hwy.lib hwy_contrib.lib tiff.lib jpeg-static.lib libpng16_static.lib webp.lib jbig.lib lerc.lib zstd_static.lib liblzma.lib zlibstatic.lib ^
   || exit /b 1
 copy /y SDL_image.h    %OUTPUT%\include\SDL2\
 copy /y SDL2_image.dll %OUTPUT%\bin\
@@ -664,7 +796,7 @@ rem
 goto :eof
 
 rem
-rem call :get "https://..." [optional-filename.tar.gz]
+rem call :get "https://..." [optional-filename.tar.gz] [unpack folder]
 rem
 
 :get
@@ -683,8 +815,13 @@ if exist %NAME% (
   rd /s /q %NAME%
 )
 echo Unpacking %ARCHIVE%
-pushd %BUILD%
-%SZIP% x -bb0 -y %ARCHIVE% -so | %SZIP% x -bb0 -y -ttar -si -aoa 1>nul 2>nul || exit /b 1
+if "%3" equ "" (
+  pushd %BUILD%
+) else (
+  if not exist "%3" mkdir "%3"
+  pushd %3
+)
+%SZIP% x -bb0 -y %ARCHIVE% -so | %SZIP% x -bb0 -y -ttar -si -aoa 1>nul 2>nul
 if exist pax_global_header del /q pax_global_header
 popd
 goto :eof
