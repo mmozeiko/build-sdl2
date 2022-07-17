@@ -13,20 +13,20 @@ set YASM_VERSION=1.3.0
 set NINJA_VERSION=1.10.2
 
 set ZLIB_VERSION=1.2.12
-set BZIP2_VERSION=1.0.6
+set BZIP2_VERSION=1.0.8
 set XZ_VERSION=5.2.5
 set ZSTD_VERSION=1.5.2
 set LIBPNG_VERSION=1.6.37
 set LIBJPEGTURBO_VERSION=2.1.3
 set JBIG_VERSION=2.1
 set LERC_VERSION=3.0
-set TIFF_VERSION=4.3.0
-set LIBWEBP_VERSION=1.2.2
+set TIFF_VERSION=4.4.0
+set LIBWEBP_VERSION=1.2.3
 set DAV1D_VERSION=1.0.0
 set LIBAVIF_VERSION=0.10.1
 set LIBJXL_VERSION=0.6.1
 set FREETYPE_VERSION=2.12.1
-set HARFBUZZ_VERSION=4.2.1
+set HARFBUZZ_VERSION=4.4.1
 set LIBOGG_VERSION=1.3.5
 set LIBVORBIS_VERSION=1.3.7
 set OPUS_VERSION=1.3.1
@@ -161,11 +161,11 @@ rem downloading & unpacking
 rem
 
 call :get "https://zlib.net/zlib-%ZLIB_VERSION%.tar.xz"                                                                                || exit /b 1
-call :get "https://sourceforge.net/projects/bzip2/files/bzip2-%BZIP2_VERSION%.tar.gz"                                                  || exit /b 1
-call :get "https://tukaani.org/xz/xz-%XZ_VERSION%.tar.xz"                                                                              || exit /b 1
+call :get "https://sourceware.org/pub/bzip2/bzip2-%BZIP2_VERSION%.tar.gz"                                                              || exit /b 1
+call :get "https://deac-fra.dl.sourceforge.net/project/lzmautils/xz-%XZ_VERSION%.tar.xz"                                               || exit /b 1
 call :get "https://github.com/facebook/zstd/releases/download/v%ZSTD_VERSION%/zstd-%ZSTD_VERSION%.tar.gz"                              || exit /b 1
 call :get "https://download.sourceforge.net/libpng/libpng-%LIBPNG_VERSION%.tar.xz"                                                     || exit /b 1
-call :get "https://sourceforge.net/projects/libjpeg-turbo/files/%LIBJPEGTURBO_VERSION%/libjpeg-turbo-%LIBJPEGTURBO_VERSION%.tar.gz"    || exit /b 1
+call :get "https://jztkft.dl.sourceforge.net/project/libjpeg-turbo/%LIBJPEGTURBO_VERSION%/libjpeg-turbo-%LIBJPEGTURBO_VERSION%.tar.gz" || exit /b 1
 call :get "https://www.cl.cam.ac.uk/~mgk25/jbigkit/download/jbigkit-%JBIG_VERSION%.tar.gz"                                             || exit /b 1
 call :get "https://github.com/Esri/lerc/archive/refs/tags/v%LERC_VERSION%.tar.gz" lerc-%LERC_VERSION%.tar.gz                           || exit /b 1
 call :get "https://download.osgeo.org/libtiff/tiff-%TIFF_VERSION%.tar.gz"                                                              || exit /b 1
@@ -180,8 +180,8 @@ call :get "https://ftp.osuosl.org/pub/xiph/releases/vorbis/libvorbis-%LIBVORBIS_
 call :get "https://ftp.osuosl.org/pub/xiph/releases/opus/opus-%OPUS_VERSION%.tar.gz"                                                   || exit /b 1
 call :get "https://ftp.osuosl.org/pub/xiph/releases/opus/opusfile-%OPUSFILE_VERSION%.tar.gz"                                           || exit /b 1
 call :get "https://github.com/xiph/flac/archive/refs/tags/%FLAC_VERSION%.tar.gz" flac-%FLAC_VERSION%.tar.gz                            || exit /b 1
-call :get "https://sourceforge.net/projects/mpg123/files/mpg123/%MPG123_VERSION%/mpg123-%MPG123_VERSION%.tar.bz2"                      || exit /b 1
-call :get "https://sourceforge.net/projects/modplug-xmms/files/libmodplug/%LIBMODPLUG_VERSION%/libmodplug-%LIBMODPLUG_VERSION%.tar.gz" || exit /b 1
+call :get "https://deac-fra.dl.sourceforge.net/project/mpg123/mpg123/%MPG123_VERSION%/mpg123-%MPG123_VERSION%.tar.bz2"                 || exit /b 1
+call :get "https://altushost-swe.dl.sourceforge.net/project/modplug-xmms/libmodplug/%LIBMODPLUG_VERSION%/libmodplug-%LIBMODPLUG_VERSION%.tar.gz" || exit /b 1
 
 rem libjxl dependencies
 
