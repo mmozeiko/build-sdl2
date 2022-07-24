@@ -26,7 +26,7 @@ set DAV1D_VERSION=1.0.0
 set LIBAVIF_VERSION=0.10.1
 set LIBJXL_VERSION=0.6.1
 set FREETYPE_VERSION=2.12.1
-set HARFBUZZ_VERSION=4.4.1
+set HARFBUZZ_VERSION=5.0.1
 set LIBOGG_VERSION=1.3.5
 set LIBVORBIS_VERSION=1.3.7
 set OPUS_VERSION=1.3.1
@@ -128,7 +128,6 @@ where /Q cl.exe || (
   )  
   call "!VS!\VC\Auxiliary\Build\vcvarsall.bat" amd64 || exit /b 1
 
-  rem TODO: how to automatically detect 2019?
   set MSVC_GENERATOR="Visual Studio 17 2022"
 )
 
@@ -162,10 +161,10 @@ rem
 
 call :get "https://zlib.net/zlib-%ZLIB_VERSION%.tar.xz"                                                                                || exit /b 1
 call :get "https://sourceware.org/pub/bzip2/bzip2-%BZIP2_VERSION%.tar.gz"                                                              || exit /b 1
-call :get "https://deac-fra.dl.sourceforge.net/project/lzmautils/xz-%XZ_VERSION%.tar.xz"                                               || exit /b 1
+call :get "https://download.sourceforge.net/lzmautils/xz-%XZ_VERSION%.tar.xz"                                                          || exit /b 1
 call :get "https://github.com/facebook/zstd/releases/download/v%ZSTD_VERSION%/zstd-%ZSTD_VERSION%.tar.gz"                              || exit /b 1
 call :get "https://download.sourceforge.net/libpng/libpng-%LIBPNG_VERSION%.tar.xz"                                                     || exit /b 1
-call :get "https://jztkft.dl.sourceforge.net/project/libjpeg-turbo/%LIBJPEGTURBO_VERSION%/libjpeg-turbo-%LIBJPEGTURBO_VERSION%.tar.gz" || exit /b 1
+call :get "https://download.sourceforge.net/libjpeg-turbo/libjpeg-turbo-2.1.3.tar.gz"                                                  || exit /b 1
 call :get "https://www.cl.cam.ac.uk/~mgk25/jbigkit/download/jbigkit-%JBIG_VERSION%.tar.gz"                                             || exit /b 1
 call :get "https://github.com/Esri/lerc/archive/refs/tags/v%LERC_VERSION%.tar.gz" lerc-%LERC_VERSION%.tar.gz                           || exit /b 1
 call :get "https://download.osgeo.org/libtiff/tiff-%TIFF_VERSION%.tar.gz"                                                              || exit /b 1
@@ -180,8 +179,8 @@ call :get "https://ftp.osuosl.org/pub/xiph/releases/vorbis/libvorbis-%LIBVORBIS_
 call :get "https://ftp.osuosl.org/pub/xiph/releases/opus/opus-%OPUS_VERSION%.tar.gz"                                                   || exit /b 1
 call :get "https://ftp.osuosl.org/pub/xiph/releases/opus/opusfile-%OPUSFILE_VERSION%.tar.gz"                                           || exit /b 1
 call :get "https://github.com/xiph/flac/archive/refs/tags/%FLAC_VERSION%.tar.gz" flac-%FLAC_VERSION%.tar.gz                            || exit /b 1
-call :get "https://deac-fra.dl.sourceforge.net/project/mpg123/mpg123/%MPG123_VERSION%/mpg123-%MPG123_VERSION%.tar.bz2"                 || exit /b 1
-call :get "https://altushost-swe.dl.sourceforge.net/project/modplug-xmms/libmodplug/%LIBMODPLUG_VERSION%/libmodplug-%LIBMODPLUG_VERSION%.tar.gz" || exit /b 1
+call :get "https://download.sourceforge.net/mpg123/mpg123-%MPG123_VERSION%.tar.bz2"                                                    || exit /b 1
+call :get "https://download.sourceforge.net/modplug-xmms/libmodplug-%LIBMODPLUG_VERSION%.tar.gz"                                       || exit /b 1
 
 rem libjxl dependencies
 
@@ -242,7 +241,7 @@ rem xz
 rem
 
 pushd %BUILD%\xz-%XZ_VERSION%
-msbuild.exe -nologo -v:m -p:configuration=ReleaseMT -p:platform=x64 windows\vs2019\liblzma.vcxproj || exit /b 1
+msbuild.exe -nologo -v:m -p:configuration=ReleaseMT -p:platform=x64 -p:PlatformToolset=v143 windows\vs2019\liblzma.vcxproj || exit /b 1
 copy windows\vs2019\ReleaseMT\x64\liblzma\liblzma.lib %DEPEND%\lib\
 mkdir %DEPEND%\include\lzma
 copy /y src\liblzma\api\lzma.h   %DEPEND%\include\
@@ -802,11 +801,13 @@ rem
 :get
 if "%2" equ "" (
   set ARCHIVE=%DOWNLOAD%\%~nx1
+  set DNAME=%~nx1
 ) else (
   set ARCHIVE=%DOWNLOAD%\%2
+  set DNAME=%2
 )
 if not exist %ARCHIVE% (
-  echo Downloading %ARCHIVE%
+  echo Downloading %DNAME%
   curl.exe -sfLo %ARCHIVE% %1 || exit /b 1
 )
 for %%N in ("%ARCHIVE%") do set NAME=%%~nN
@@ -814,7 +815,7 @@ if exist %NAME% (
   echo Removing %NAME%
   rd /s /q %NAME%
 )
-echo Unpacking %ARCHIVE%
+echo Unpacking %DNAME%
 if "%3" equ "" (
   pushd %BUILD%
 ) else (
