@@ -808,7 +808,7 @@ if "%2" equ "" (
 )
 if not exist %ARCHIVE% (
   echo Downloading %DNAME%
-  curl.exe -sfLo %ARCHIVE% %1 || exit /b 1
+  curl.exe --retry 5 --retry-all-errors -sfLo %ARCHIVE% %1 || exit /b 1
 )
 for %%N in ("%ARCHIVE%") do set NAME=%%~nN
 if exist %NAME% (
