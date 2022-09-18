@@ -16,22 +16,22 @@ set ZLIB_VERSION=1.2.12
 set BZIP2_VERSION=1.0.8
 set XZ_VERSION=5.2.5
 set ZSTD_VERSION=1.5.2
-set LIBPNG_VERSION=1.6.37
-set LIBJPEGTURBO_VERSION=2.1.3
+set LIBPNG_VERSION=1.6.38
+set LIBJPEGTURBO_VERSION=2.1.4
 set JBIG_VERSION=2.1
 set LERC_VERSION=3.0
 set TIFF_VERSION=4.4.0
-set LIBWEBP_VERSION=1.2.3
+set LIBWEBP_VERSION=1.2.4
 set DAV1D_VERSION=1.0.0
 set LIBAVIF_VERSION=0.10.1
 set LIBJXL_VERSION=0.6.1
 set FREETYPE_VERSION=2.12.1
-set HARFBUZZ_VERSION=5.0.1
+set HARFBUZZ_VERSION=5.2.0
 set LIBOGG_VERSION=1.3.5
 set LIBVORBIS_VERSION=1.3.7
 set OPUS_VERSION=1.3.1
 set OPUSFILE_VERSION=0.12
-set FLAC_VERSION=1.3.3
+set FLAC_VERSION=1.4.0
 set MPG123_VERSION=1.29.3
 set LIBMODPLUG_VERSION=0.8.9.0
 
@@ -164,7 +164,7 @@ call :get "https://sourceware.org/pub/bzip2/bzip2-%BZIP2_VERSION%.tar.gz"       
 call :get "https://download.sourceforge.net/lzmautils/xz-%XZ_VERSION%.tar.xz"                                                          || exit /b 1
 call :get "https://github.com/facebook/zstd/releases/download/v%ZSTD_VERSION%/zstd-%ZSTD_VERSION%.tar.gz"                              || exit /b 1
 call :get "https://download.sourceforge.net/libpng/libpng-%LIBPNG_VERSION%.tar.xz"                                                     || exit /b 1
-call :get "https://download.sourceforge.net/libjpeg-turbo/libjpeg-turbo-2.1.3.tar.gz"                                                  || exit /b 1
+call :get "https://download.sourceforge.net/libjpeg-turbo/libjpeg-turbo-%LIBJPEGTURBO_VERSION%.tar.gz"                                 || exit /b 1
 call :get "https://www.cl.cam.ac.uk/~mgk25/jbigkit/download/jbigkit-%JBIG_VERSION%.tar.gz"                                             || exit /b 1
 call :get "https://github.com/Esri/lerc/archive/refs/tags/v%LERC_VERSION%.tar.gz" lerc-%LERC_VERSION%.tar.gz                           || exit /b 1
 call :get "https://download.osgeo.org/libtiff/tiff-%TIFF_VERSION%.tar.gz"                                                              || exit /b 1
@@ -585,6 +585,8 @@ cmake.exe -Wno-dev                           ^
   -DBUILD_SHARED_LIBS=OFF                    ^
   -DBUILD_CXXLIBS=OFF                        ^
   -DBUILD_EXAMPLES=OFF                       ^
+  -DBUILD_DOCS=OFF                           ^
+  -DINSTALL_MANPAGES=OFF                     ^
   || exit /b 1
 cmake.exe --build %BUILD%\flac-%FLAC_VERSION% --config Release --target install --parallel || exit /b 1
 
@@ -822,7 +824,7 @@ if "%3" equ "" (
   if not exist "%3" mkdir "%3"
   pushd %3
 )
-%SZIP% x -bb0 -y %ARCHIVE% -so | %SZIP% x -bb0 -y -ttar -si -aoa 1>nul 2>nul
+%SZIP% x -bb0 -y %ARCHIVE% -so | %SZIP% x -bb0 -y -ttar -si -aoa -xr^^!*\tools\benchmark\metrics 1>nul 2>nul
 if exist pax_global_header del /q pax_global_header
 popd
 goto :eof
