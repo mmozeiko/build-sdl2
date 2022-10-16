@@ -10,9 +10,9 @@ rem
 
 set NASM_VERSION=2.15.05
 set YASM_VERSION=1.3.0
-set NINJA_VERSION=1.10.2
+set NINJA_VERSION=1.11.1
 
-set ZLIB_VERSION=1.2.12
+set ZLIB_VERSION=1.2.13
 set BZIP2_VERSION=1.0.8
 set XZ_VERSION=5.2.5
 set ZSTD_VERSION=1.5.2
@@ -23,15 +23,15 @@ set LERC_VERSION=3.0
 set TIFF_VERSION=4.4.0
 set LIBWEBP_VERSION=1.2.4
 set DAV1D_VERSION=1.0.0
-set LIBAVIF_VERSION=0.10.1
-set LIBJXL_VERSION=0.6.1
+set LIBAVIF_VERSION=0.11.0
+set LIBJXL_VERSION=0.7.0
 set FREETYPE_VERSION=2.12.1
-set HARFBUZZ_VERSION=5.2.0
+set HARFBUZZ_VERSION=5.3.0
 set LIBOGG_VERSION=1.3.5
 set LIBVORBIS_VERSION=1.3.7
 set OPUS_VERSION=1.3.1
 set OPUSFILE_VERSION=0.12
-set FLAC_VERSION=1.4.0
+set FLAC_VERSION=1.4.1
 set MPG123_VERSION=1.29.3
 set LIBMODPLUG_VERSION=0.8.9.0
 
@@ -185,22 +185,18 @@ call :get "https://download.sourceforge.net/modplug-xmms/libmodplug-%LIBMODPLUG_
 rem libjxl dependencies
 
 set BROTLI_COMMIT=35ef5c5
-set HIGHWAY_COMMIT=e239774
-set LODEPNG_COMMIT=48e5364
+set HIGHWAY_COMMIT=22e3d72
 set SKCMS_COMMIT=6437475
 
 rd /s /q %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\brotli  1>nul 2>nul
 rd /s /q %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\highway 1>nul 2>nul
-rd /s /q %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\lodepng 1>nul 2>nul
 
 call :get "https://github.com/google/brotli/tarball/%BROTLI_COMMIT%"           google-brotli-%BROTLI_COMMIT%.tar.gz     || exit /b 1
 call :get "https://github.com/google/highway/tarball/%HIGHWAY_COMMIT%"         google-highway-%HIGHWAY_COMMIT%.tar.gz   || exit /b 1
-call :get "https://github.com/lvandeve/lodepng/tarball/%LODEPNG_COMMIT%"       lvandeve-lodepng-%LODEPNG_COMMIT%.tar.gz || exit /b 1
 call :get "https://skia.googlesource.com/skcms/+archive/%SKCMS_COMMIT%.tar.gz" skcms-%SKCMS_COMMIT%.tar.gz %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\skcms || exit /b 1
 
 move %BUILD%\google-brotli-%BROTLI_COMMIT%     %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\brotli  1>nul 2>nul
 move %BUILD%\google-highway-%HIGHWAY_COMMIT%   %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\highway 1>nul 2>nul
-move %BUILD%\lvandeve-lodepng-%LODEPNG_COMMIT% %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\lodepng 1>nul 2>nul
 
 call :clone SDL       "https://github.com/libsdl-org/SDL"       || exit /b 1
 call :clone SDL_image "https://github.com/libsdl-org/SDL_image" || exit /b 1
@@ -483,6 +479,7 @@ cmake.exe -Wno-dev                             ^
   -DCMAKE_POLICY_DEFAULT_CMP0091=NEW           ^
   -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded   ^
   -DBUILD_SHARED_LIBS=OFF                      ^
+  -DFT_DISABLE_BROTLI=ON                       ^
   || exit /b 1
 cmake.exe --build %BUILD%\freetype-%FREETYPE_VERSION%\build --config Release --target install --parallel || exit /b 1
 
@@ -654,7 +651,7 @@ cl.exe -MP -MT -O2 -DDLL_EXPORT -DJXL_STATIC_DEFINE -DNDEBUG -DWIN32 ^
   IMG_jpg.c IMG_jxl.c IMG_lbm.c IMG_pcx.c IMG_png.c IMG_pnm.c IMG_qoi.c IMG_svg.c IMG_tga.c IMG_tif.c IMG_webp.c ^
   IMG_xcf.c IMG_xpm.c IMG_xv.c version.res ^
   -link -dll -opt:icf -opt:ref -out:SDL2_image.dll -libpath:%BUILD%\libjxl-%LIBJXL_VERSION%\build\third_party\brotli\Release ^
-  SDL2.lib avif.lib libdav1d.a jxl_dec-static.lib brotlidec-static.lib brotlicommon-static.lib hwy.lib hwy_contrib.lib tiff.lib jpeg-static.lib libpng16_static.lib webp.lib jbig.lib lerc.lib zstd_static.lib liblzma.lib zlibstatic.lib ^
+  SDL2.lib avif.lib libdav1d.a jxl_dec-static.lib brotlidec-static.lib brotlicommon-static.lib hwy.lib tiff.lib jpeg-static.lib libpng16_static.lib webp.lib jbig.lib lerc.lib zstd_static.lib liblzma.lib zlibstatic.lib ^
   || exit /b 1
 copy /y SDL_image.h    %OUTPUT%\include\SDL2\
 copy /y SDL2_image.dll %OUTPUT%\bin\
