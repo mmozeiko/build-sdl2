@@ -14,7 +14,7 @@ set NINJA_VERSION=1.11.1
 
 set ZLIB_VERSION=1.2.13
 set BZIP2_VERSION=1.0.8
-set XZ_VERSION=5.2.7
+set XZ_VERSION=5.2.8
 set ZSTD_VERSION=1.5.2
 set LIBPNG_VERSION=1.6.38
 set LIBJPEGTURBO_VERSION=2.1.4
@@ -198,13 +198,13 @@ call :get "https://skia.googlesource.com/skcms/+archive/%SKCMS_COMMIT%.tar.gz" s
 move %BUILD%\google-brotli-%BROTLI_COMMIT%     %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\brotli  1>nul 2>nul
 move %BUILD%\google-highway-%HIGHWAY_COMMIT%   %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\highway 1>nul 2>nul
 
-call :clone SDL       "https://github.com/libsdl-org/SDL"       || exit /b 1
-call :clone SDL_image "https://github.com/libsdl-org/SDL_image" || exit /b 1
-call :clone SDL_mixer "https://github.com/libsdl-org/SDL_mixer" || exit /b 1
-call :clone SDL_ttf   "https://github.com/libsdl-org/SDL_ttf"   || exit /b 1
-call :clone SDL_rtf   "https://github.com/libsdl-org/SDL_rtf"   || exit /b 1
-call :clone SDL_net   "https://github.com/libsdl-org/SDL_net"   || exit /b 1
-call :clone SDL_sound "https://github.com/icculus/SDL_sound"    || exit /b 1
+call :clone SDL       "https://github.com/libsdl-org/SDL"       SDL2 || exit /b 1
+call :clone SDL_image "https://github.com/libsdl-org/SDL_image" main || exit /b 1
+call :clone SDL_mixer "https://github.com/libsdl-org/SDL_mixer" main || exit /b 1
+call :clone SDL_ttf   "https://github.com/libsdl-org/SDL_ttf"   main || exit /b 1
+call :clone SDL_rtf   "https://github.com/libsdl-org/SDL_rtf"   main || exit /b 1
+call :clone SDL_net   "https://github.com/libsdl-org/SDL_net"   main || exit /b 1
+call :clone SDL_sound "https://github.com/icculus/SDL_sound"    main || exit /b 1
 
 rem
 rem zlib
@@ -366,6 +366,7 @@ rem tiff
 rem dependencies: libjpeg-turbo, libwebp, jbig, lerc, zstd, xz, zlib
 rem
 
+git apply --directory=build/tiff-%TIFF_VERSION% tiff.patch || exit /b 1
 cmake.exe -Wno-dev                           ^
   -S %BUILD%\tiff-%TIFF_VERSION%             ^
   -B %BUILD%\tiff-%TIFF_VERSION%             ^
@@ -840,7 +841,7 @@ if exist %1 (
   popd
 ) else (
   echo Cloning %1
-  call git clone --quiet --single-branch --no-tags --depth 1 %2 %1 || exit /b 1
+  call git clone --quiet --branch %3 --no-tags --depth 1 %2 %1 || exit /b 1
 )
 popd
 goto :eof
