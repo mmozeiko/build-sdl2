@@ -199,9 +199,9 @@ move %BUILD%\google-brotli-%BROTLI_COMMIT%     %BUILD%\libjxl-%LIBJXL_VERSION%\t
 move %BUILD%\google-highway-%HIGHWAY_COMMIT%   %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\highway 1>nul 2>nul
 
 call :clone SDL       "https://github.com/libsdl-org/SDL"       SDL2 || exit /b 1
-call :clone SDL_image "https://github.com/libsdl-org/SDL_image" main || exit /b 1
-call :clone SDL_mixer "https://github.com/libsdl-org/SDL_mixer" main || exit /b 1
-call :clone SDL_ttf   "https://github.com/libsdl-org/SDL_ttf"   main || exit /b 1
+call :clone SDL_image "https://github.com/libsdl-org/SDL_image" SDL2 || exit /b 1
+call :clone SDL_mixer "https://github.com/libsdl-org/SDL_mixer" SDL2 || exit /b 1
+call :clone SDL_ttf   "https://github.com/libsdl-org/SDL_ttf"   SDL2 || exit /b 1
 call :clone SDL_rtf   "https://github.com/libsdl-org/SDL_rtf"   main || exit /b 1
 call :clone SDL_net   "https://github.com/libsdl-org/SDL_net"   main || exit /b 1
 call :clone SDL_sound "https://github.com/icculus/SDL_sound"    main || exit /b 1
