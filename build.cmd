@@ -16,17 +16,17 @@ set ZLIB_VERSION=1.2.13
 set BZIP2_VERSION=1.0.8
 set XZ_VERSION=5.2.8
 set ZSTD_VERSION=1.5.2
-set LIBPNG_VERSION=1.6.38
+set LIBPNG_VERSION=1.6.39
 set LIBJPEGTURBO_VERSION=2.1.4
 set JBIG_VERSION=2.1
 set LERC_VERSION=3.0
-set TIFF_VERSION=4.4.0
+set TIFF_VERSION=4.5.0
 set LIBWEBP_VERSION=1.2.4
 set DAV1D_VERSION=1.0.0
 set LIBAVIF_VERSION=0.11.1
 set LIBJXL_VERSION=0.7.0
 set FREETYPE_VERSION=2.12.1
-set HARFBUZZ_VERSION=5.3.1
+set HARFBUZZ_VERSION=6.0.0
 set LIBOGG_VERSION=1.3.5
 set LIBVORBIS_VERSION=1.3.7
 set OPUS_VERSION=1.3.1
@@ -383,6 +383,11 @@ cmake.exe -Wno-dev                           ^
   -Dwebp=ON                                  ^
   -Djbig=ON                                  ^
   -Dlerc=ON                                  ^
+  -Dtiff-tools=OFF                           ^
+  -Dtiff-tests=OFF                           ^
+  -Dtiff-contrib=OFF                         ^
+  -Dtiff-docs=OFF                            ^
+  -Dtiff-opengl=OFF                          ^
   -DBUILD_SHARED_LIBS=OFF                    ^
   || exit /b 1
 cmake.exe --build %BUILD%\tiff-%TIFF_VERSION% --config Release --target install --parallel || exit /b 1

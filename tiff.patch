@@ -11,16 +11,3 @@ index ec4f5383..c9e52a54 100644
                  string(REGEX REPLACE "^${prefix}" "" name "${name}")
                  break()
              endif()
-diff --git a/cmake/OpenGLChecks.cmake b/cmake/OpenGLChecks.cmake
-index 8d4142a..eecbd6e 100644
---- a/cmake/OpenGLChecks.cmake
-+++ b/cmake/OpenGLChecks.cmake
-@@ -31,7 +31,7 @@ find_package(GLUT)
- 
- set(HAVE_OPENGL FALSE)
- if(OPENGL_FOUND AND OPENGL_GLU_FOUND AND GLUT_FOUND)
--    set(HAVE_OPENGL TRUE)
-+#    set(HAVE_OPENGL TRUE)
- endif()
- 
- # Purely to satisfy the generated headers:
