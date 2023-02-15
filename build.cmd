@@ -15,18 +15,18 @@ set NINJA_VERSION=1.11.1
 set ZLIB_VERSION=1.2.13
 set BZIP2_VERSION=1.0.8
 set XZ_VERSION=5.4.1
-set ZSTD_VERSION=1.5.2
+set ZSTD_VERSION=1.5.4
 set LIBPNG_VERSION=1.6.39
-set LIBJPEGTURBO_VERSION=2.1.4
+set LIBJPEGTURBO_VERSION=2.1.5.1
 set JBIG_VERSION=2.1
 set LERC_VERSION=3.0
 set TIFF_VERSION=4.5.0
 set LIBWEBP_VERSION=1.3.0
-set DAV1D_VERSION=1.0.0
+set DAV1D_VERSION=1.1.0
 set LIBAVIF_VERSION=0.11.1
 set LIBJXL_VERSION=0.8.0
-set FREETYPE_VERSION=2.12.1
-set HARFBUZZ_VERSION=6.0.0
+set FREETYPE_VERSION=2.13.0
+set HARFBUZZ_VERSION=7.0.0
 set LIBOGG_VERSION=1.3.5
 set LIBVORBIS_VERSION=1.3.7
 set OPUS_VERSION=1.3.1
@@ -827,7 +827,7 @@ if "%3" equ "" (
   if not exist "%3" mkdir "%3"
   pushd %3
 )
-%SZIP% x -bb0 -y %ARCHIVE% -so | %SZIP% x -bb0 -y -ttar -si -aoa -xr^^!*\tools\benchmark\metrics 1>nul 2>nul
+%SZIP% x -bb0 -y %ARCHIVE% -so | %SZIP% x -bb0 -y -ttar -si -aoa -xr^^!*\tools\benchmark\metrics -xr^^!*\tests\cli-tests 1>nul 2>nul
 if exist pax_global_header del /q pax_global_header
 popd
 goto :eof
