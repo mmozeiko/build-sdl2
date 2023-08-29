@@ -12,7 +12,7 @@ set NASM_VERSION=2.16.01
 set YASM_VERSION=1.3.0
 set NINJA_VERSION=1.11.1
 
-set ZLIB_VERSION=1.2.13
+set ZLIB_VERSION=1.3
 set BZIP2_VERSION=1.0.8
 set XZ_VERSION=5.4.3
 set ZSTD_VERSION=1.5.5
@@ -23,7 +23,7 @@ set LERC_VERSION=4.0.0
 set TIFF_VERSION=4.5.1
 set LIBWEBP_VERSION=1.3.1
 set DAV1D_VERSION=1.2.1
-set LIBAVIF_VERSION=0.11.1
+set LIBAVIF_VERSION=1.0.0
 set LIBJXL_VERSION=0.8.2
 set FREETYPE_VERSION=2.13.1
 set HARFBUZZ_VERSION=8.0.1
@@ -761,7 +761,7 @@ set /p SDL_IMAGE_COMMIT=<%BUILD%\SDL_image\.git\refs\heads\SDL2
 set /p SDL_MIXER_COMMIT=<%BUILD%\SDL_mixer\.git\refs\heads\SDL2
 set /p SDL_SOUND_COMMIT=<%BUILD%\SDL_sound\.git\refs\heads\main
 set /p SDL_TTF_COMMIT=<%BUILD%\SDL_ttf\.git\refs\heads\SDL2
-set /p SDL_RTF_COMMIT=<%BUILD%\SDL_rtf\.git\refs\heads\main
+set /p SDL_RTF_COMMIT=<%BUILD%\SDL_rtf\.git\refs\heads\SDL2
 set /p SDL_NET_COMMIT=<%BUILD%\SDL_net\.git\refs\heads\main
 
 echo SDL commit %SDL_COMMIT% > %OUTPUT%\commits.txt
