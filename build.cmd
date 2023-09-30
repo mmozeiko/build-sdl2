@@ -20,13 +20,13 @@ set LIBPNG_VERSION=1.6.40
 set LIBJPEGTURBO_VERSION=3.0.0
 set JBIG_VERSION=2.1
 set LERC_VERSION=4.0.0
-set TIFF_VERSION=4.5.1
-set LIBWEBP_VERSION=1.3.1
+set TIFF_VERSION=4.6.0
+set LIBWEBP_VERSION=1.3.2
 set DAV1D_VERSION=1.2.1
-set LIBAVIF_VERSION=1.0.0
+set LIBAVIF_VERSION=1.0.1
 set LIBJXL_VERSION=0.8.2
-set FREETYPE_VERSION=2.13.1
-set HARFBUZZ_VERSION=8.0.1
+set FREETYPE_VERSION=2.13.2
+set HARFBUZZ_VERSION=8.2.1
 set LIBOGG_VERSION=1.3.5
 set LIBVORBIS_VERSION=1.3.7
 set OPUS_VERSION=1.4
@@ -203,7 +203,7 @@ call :clone SDL_image "https://github.com/libsdl-org/SDL_image" SDL2 || exit /b 
 call :clone SDL_mixer "https://github.com/libsdl-org/SDL_mixer" SDL2 || exit /b 1
 call :clone SDL_ttf   "https://github.com/libsdl-org/SDL_ttf"   SDL2 || exit /b 1
 call :clone SDL_rtf   "https://github.com/libsdl-org/SDL_rtf"   SDL2 || exit /b 1
-call :clone SDL_net   "https://github.com/libsdl-org/SDL_net"   main || exit /b 1
+call :clone SDL_net   "https://github.com/libsdl-org/SDL_net"   SDL2 || exit /b 1
 call :clone SDL_sound "https://github.com/icculus/SDL_sound"    main || exit /b 1
 
 rem
@@ -724,14 +724,14 @@ rem SDL_net
 rem
 
 pushd %BUILD%\SDL_net
-rc.exe -nologo version.rc || exit /b 1
-cl.exe -MP -MT -O2 -DDLL_EXPORT -DNDEBUG -DWIN32 ^
-  SDLnet.c SDLnetselect.c SDLnetTCP.c SDLnetUDP.c version.res ^
+rc.exe -nologo src\version.rc || exit /b 1
+cl.exe -MP -MT -O2 -Iinclude -DDLL_EXPORT -DNDEBUG -DWIN32 ^
+  src\SDLnet.c src\SDLnetselect.c src\SDLnetTCP.c src\SDLnetUDP.c src\version.res ^
   -link -dll -opt:icf -opt:ref -out:SDL2_net.dll SDL2.lib ws2_32.lib iphlpapi.lib ^
   || exit /b 1
-copy /y SDL_net.h    %OUTPUT%\include\SDL2\
-copy /y SDL2_net.dll %OUTPUT%\bin\
-copy /y SDL2_net.lib %OUTPUT%\lib\
+copy /y include\SDL_net.h %OUTPUT%\include\SDL2\
+copy /y SDL2_net.dll      %OUTPUT%\bin\
+copy /y SDL2_net.lib      %OUTPUT%\lib\
 popd
 
 rem
@@ -762,7 +762,7 @@ set /p SDL_MIXER_COMMIT=<%BUILD%\SDL_mixer\.git\refs\heads\SDL2
 set /p SDL_SOUND_COMMIT=<%BUILD%\SDL_sound\.git\refs\heads\main
 set /p SDL_TTF_COMMIT=<%BUILD%\SDL_ttf\.git\refs\heads\SDL2
 set /p SDL_RTF_COMMIT=<%BUILD%\SDL_rtf\.git\refs\heads\SDL2
-set /p SDL_NET_COMMIT=<%BUILD%\SDL_net\.git\refs\heads\main
+set /p SDL_NET_COMMIT=<%BUILD%\SDL_net\.git\refs\heads\SDL2
 
 echo SDL commit %SDL_COMMIT% > %OUTPUT%\commits.txt
 echo SDL_image commit %SDL_IMAGE_COMMIT% >> %OUTPUT%\commits.txt
