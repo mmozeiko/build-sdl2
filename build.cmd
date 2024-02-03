@@ -23,7 +23,7 @@ set LERC_VERSION=4.0.0
 set TIFF_VERSION=4.6.0
 set LIBWEBP_VERSION=1.3.2
 set DAV1D_VERSION=1.3.0
-set LIBAVIF_VERSION=1.0.2
+set LIBAVIF_VERSION=1.0.3
 set LIBJXL_VERSION=0.9.1
 set FREETYPE_VERSION=2.13.2
 set HARFBUZZ_VERSION=8.3.0
@@ -32,8 +32,14 @@ set LIBVORBIS_VERSION=1.3.7
 set OPUS_VERSION=1.4
 set OPUSFILE_VERSION=0.12
 set FLAC_VERSION=1.4.3
-set MPG123_VERSION=1.29.3
+set MPG123_VERSION=1.32.4
 set LIBMODPLUG_VERSION=0.8.9.0
+
+rem libjxl dependencies
+
+set BROTLI_COMMIT=36533a8
+set HIGHWAY_COMMIT=ba0900a
+set SKCMS_COMMIT=42030a7
 
 rem
 rem dependencies
@@ -181,12 +187,6 @@ call :get "https://downloads.xiph.org/releases/opus/opusfile-%OPUSFILE_VERSION%.
 call :get "https://downloads.xiph.org/releases/flac/flac-%FLAC_VERSION%.tar.xz"                                                        || exit /b 1
 call :get "https://download.sourceforge.net/mpg123/mpg123-%MPG123_VERSION%.tar.bz2"                                                    || exit /b 1
 call :get "https://download.sourceforge.net/modplug-xmms/libmodplug-%LIBMODPLUG_VERSION%.tar.gz"                                       || exit /b 1
-
-rem libjxl dependencies
-
-set BROTLI_COMMIT=36533a8
-set HIGHWAY_COMMIT=ba0900a
-set SKCMS_COMMIT=42030a7
 
 rd /s /q %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\brotli  1>nul 2>nul
 rd /s /q %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\highway 1>nul 2>nul
@@ -600,7 +600,6 @@ rem
 rem mpg123
 rem
 
-copy %BUILD%\mpg123-%MPG123_VERSION%\ports\cmake\cmake\CheckCPUArch.c.in %BUILD%\mpg123-%MPG123_VERSION%\ports\cmake\
 cmake.exe -Wno-dev                               ^
   -S %BUILD%\mpg123-%MPG123_VERSION%\ports\cmake ^
   -B %BUILD%\mpg123-%MPG123_VERSION%             ^
@@ -610,6 +609,7 @@ cmake.exe -Wno-dev                               ^
   -DCMAKE_POLICY_DEFAULT_CMP0091=NEW             ^
   -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded     ^
   -DBUILD_SHARED_LIBS=OFF                        ^
+  -DBUILD_LIBOUT123=OFF                          ^
   || exit /b 1
 cmake.exe --build %BUILD%\mpg123-%MPG123_VERSION% --config Release --target install --parallel || exit /b 1
 
@@ -655,6 +655,7 @@ rem
 pushd %BUILD%\SDL_image
 rc.exe -nologo src\version.rc || exit /b 1
 cl.exe -MP -MT -O2 -DDLL_EXPORT -DJXL_STATIC_DEFINE -DNDEBUG -DWIN32 -Iinclude ^
+  -DSDL_IMAGE_SAVE_PNG=1 -DSDL_IMAGE_SAVE_JPG=1 ^
   -DLOAD_AVIF -DLOAD_BMP -DLOAD_GIF -DLOAD_JPG -DLOAD_JXL -DLOAD_LBM -DLOAD_PCX -DLOAD_PNG -DLOAD_PNM -DLOAD_QOI ^
   -DLOAD_SVG -DLOAD_TGA -DLOAD_TIF -DLOAD_WEBP -DLOAD_XCF -DLOAD_XPM -DLOAD_XV src\IMG.c src\IMG_avif.c src\IMG_bmp.c ^
   src\IMG_gif.c src\IMG_jpg.c src\IMG_jxl.c src\IMG_lbm.c src\IMG_pcx.c src\IMG_png.c src\IMG_pnm.c src\IMG_qoi.c ^
@@ -684,7 +685,7 @@ cl.exe -MP -MT -O2 -DDLL_EXPORT -DNDEBUG -DWIN32 -DMODPLUG_BUILD -DMODPLUG_STATI
 copy /y include\SDL_mixer.h %OUTPUT%\include\SDL2\
 copy /y SDL2_mixer.dll      %OUTPUT%\bin\
 copy /y SDL2_mixer.lib      %OUTPUT%\lib\
-popd	
+popd
 
 rem
 rem SDL_ttf
@@ -702,7 +703,7 @@ cl.exe -MP -MT -O2 -DDLL_EXPORT -DNDEBUG -DWIN32 -DTTF_USE_HARFBUZZ=1 ^
 copy /y SDL_ttf.h    %OUTPUT%\include\SDL2\
 copy /y SDL2_ttf.dll %OUTPUT%\bin\
 copy /y SDL2_ttf.lib %OUTPUT%\lib\
-popd	
+popd
 
 rem
 rem SDL_rtf
@@ -717,7 +718,7 @@ cl.exe -MP -MT -O2 -DDLL_EXPORT -DNDEBUG -DWIN32 ^
 copy /y SDL_rtf.h    %OUTPUT%\include\SDL2\
 copy /y SDL2_rtf.dll %OUTPUT%\bin\
 copy /y SDL2_rtf.lib %OUTPUT%\lib\
-popd	
+popd
 
 rem
 rem SDL_net
