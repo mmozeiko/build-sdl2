@@ -14,22 +14,22 @@ set NINJA_VERSION=1.11.1
 
 set ZLIB_VERSION=1.3.1
 set BZIP2_VERSION=1.0.8
-set XZ_VERSION=5.6.0
+set XZ_VERSION=5.6.1
 set ZSTD_VERSION=1.5.5
 set LIBPNG_VERSION=1.6.43
-set LIBJPEGTURBO_VERSION=3.0.0
+set LIBJPEGTURBO_VERSION=3.0.2
 set JBIG_VERSION=2.1
 set LERC_VERSION=4.0.0
 set TIFF_VERSION=4.6.0
 set LIBWEBP_VERSION=1.3.2
 set DAV1D_VERSION=1.4.0
 set LIBAVIF_VERSION=1.0.4
-set LIBJXL_VERSION=0.10.1
+set LIBJXL_VERSION=0.10.2
 set FREETYPE_VERSION=2.13.2
-set HARFBUZZ_VERSION=8.3.0
+set HARFBUZZ_VERSION=8.3.1
 set LIBOGG_VERSION=1.3.5
 set LIBVORBIS_VERSION=1.3.7
-set OPUS_VERSION=1.4
+set OPUS_VERSION=1.5.1
 set OPUSFILE_VERSION=0.12
 set FLAC_VERSION=1.4.3
 set MPG123_VERSION=1.32.5
@@ -165,29 +165,29 @@ rem
 rem downloading & unpacking
 rem
 
-call :get "https://github.com/madler/zlib/releases/download/v%ZLIB_VERSION%/zlib-%ZLIB_VERSION%.tar.xz"                                || exit /b 1
-call :get "https://sourceware.org/pub/bzip2/bzip2-%BZIP2_VERSION%.tar.gz"                                                              || exit /b 1
-call :get "https://github.com/tukaani-project/xz/releases/download/v%XZ_VERSION%/xz-%XZ_VERSION%.tar.xz"                               || exit /b 1
-call :get "https://github.com/facebook/zstd/releases/download/v%ZSTD_VERSION%/zstd-%ZSTD_VERSION%.tar.gz"                              || exit /b 1
-call :get "https://download.sourceforge.net/libpng/libpng-%LIBPNG_VERSION%.tar.xz"                                                     || exit /b 1
-call :get "https://download.sourceforge.net/libjpeg-turbo/libjpeg-turbo-%LIBJPEGTURBO_VERSION%.tar.gz"                                 || exit /b 1
-call :get "https://www.cl.cam.ac.uk/~mgk25/jbigkit/download/jbigkit-%JBIG_VERSION%.tar.gz"                                             || exit /b 1
-call :get "https://github.com/Esri/lerc/archive/refs/tags/v%LERC_VERSION%.tar.gz" lerc-%LERC_VERSION%.tar.gz                           || exit /b 1
-call :get "https://download.osgeo.org/libtiff/tiff-%TIFF_VERSION%.tar.gz"                                                              || exit /b 1
-call :get "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-%LIBWEBP_VERSION%.tar.gz"                    || exit /b 1
-call :get "https://code.videolan.org/videolan/dav1d/-/archive/%DAV1D_VERSION%/dav1d-%DAV1D_VERSION%.tar.bz2"                           || exit /b 1
-call :get "https://github.com/AOMediaCodec/libavif/archive/refs/tags/v%LIBAVIF_VERSION%.tar.gz" libavif-%LIBAVIF_VERSION%.tar.gz       || exit /b 1
-call :get "https://github.com/libjxl/libjxl/archive/refs/tags/v%LIBJXL_VERSION%.tar.gz" libjxl-%LIBJXL_VERSION%.tar.gz                 || exit /b 1
-call :get "https://download.savannah.gnu.org/releases/freetype/freetype-%FREETYPE_VERSION%.tar.xz"                                     || exit /b 1
-call :get "https://github.com/harfbuzz/harfbuzz/releases/download/%HARFBUZZ_VERSION%/harfbuzz-%HARFBUZZ_VERSION%.tar.xz"               || exit /b 1
-call :get "https://downloads.xiph.org/releases/ogg/libogg-%LIBOGG_VERSION%.tar.xz"                                                     || exit /b 1
-call :get "https://downloads.xiph.org/releases/vorbis/libvorbis-%LIBVORBIS_VERSION%.tar.xz"                                            || exit /b 1
-call :get "https://downloads.xiph.org/releases/opus/opus-%OPUS_VERSION%.tar.gz"                                                        || exit /b 1
-call :get "https://downloads.xiph.org/releases/opus/opusfile-%OPUSFILE_VERSION%.tar.gz"                                                || exit /b 1
-call :get "https://downloads.xiph.org/releases/flac/flac-%FLAC_VERSION%.tar.xz"                                                        || exit /b 1
-call :get "https://download.sourceforge.net/mpg123/mpg123-%MPG123_VERSION%.tar.bz2"                                                    || exit /b 1
-call :get "https://github.com/libxmp/libxmp/releases/download/libxmp-%LIBXMP_VERSION%/libxmp-%LIBXMP_VERSION%.tar.gz"                  || exit /b 1
-call :get "https://github.com/dbry/WavPack/releases/download/%WAVPACK_VERSION%/wavpack-%WAVPACK_VERSION%.tar.xz"                       || exit /b 1
+call :get "https://github.com/madler/zlib/releases/download/v%ZLIB_VERSION%/zlib-%ZLIB_VERSION%.tar.xz"                                         || exit /b 1
+call :get "https://sourceware.org/pub/bzip2/bzip2-%BZIP2_VERSION%.tar.gz"                                                                       || exit /b 1
+call :get "https://github.com/tukaani-project/xz/releases/download/v%XZ_VERSION%/xz-%XZ_VERSION%.tar.xz"                                        || exit /b 1
+call :get "https://github.com/facebook/zstd/releases/download/v%ZSTD_VERSION%/zstd-%ZSTD_VERSION%.tar.gz"                                       || exit /b 1
+call :get "https://download.sourceforge.net/libpng/libpng-%LIBPNG_VERSION%.tar.xz"                                                              || exit /b 1
+call :get "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/%LIBJPEGTURBO_VERSION%/libjpeg-turbo-%LIBJPEGTURBO_VERSION%.tar.gz" || exit /b 1
+call :get "https://www.cl.cam.ac.uk/~mgk25/jbigkit/download/jbigkit-%JBIG_VERSION%.tar.gz"                                                      || exit /b 1
+call :get "https://github.com/Esri/lerc/archive/refs/tags/v%LERC_VERSION%.tar.gz" lerc-%LERC_VERSION%.tar.gz                                    || exit /b 1
+call :get "https://download.osgeo.org/libtiff/tiff-%TIFF_VERSION%.tar.gz"                                                                       || exit /b 1
+call :get "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-%LIBWEBP_VERSION%.tar.gz"                             || exit /b 1
+call :get "https://code.videolan.org/videolan/dav1d/-/archive/%DAV1D_VERSION%/dav1d-%DAV1D_VERSION%.tar.bz2"                                    || exit /b 1
+call :get "https://github.com/AOMediaCodec/libavif/archive/refs/tags/v%LIBAVIF_VERSION%.tar.gz" libavif-%LIBAVIF_VERSION%.tar.gz                || exit /b 1
+call :get "https://github.com/libjxl/libjxl/archive/refs/tags/v%LIBJXL_VERSION%.tar.gz" libjxl-%LIBJXL_VERSION%.tar.gz                          || exit /b 1
+call :get "https://download.savannah.gnu.org/releases/freetype/freetype-%FREETYPE_VERSION%.tar.xz"                                              || exit /b 1
+call :get "https://github.com/harfbuzz/harfbuzz/releases/download/%HARFBUZZ_VERSION%/harfbuzz-%HARFBUZZ_VERSION%.tar.xz"                        || exit /b 1
+call :get "https://downloads.xiph.org/releases/ogg/libogg-%LIBOGG_VERSION%.tar.xz"                                                              || exit /b 1
+call :get "https://downloads.xiph.org/releases/vorbis/libvorbis-%LIBVORBIS_VERSION%.tar.xz"                                                     || exit /b 1
+call :get "https://downloads.xiph.org/releases/opus/opus-%OPUS_VERSION%.tar.gz"                                                                 || exit /b 1
+call :get "https://downloads.xiph.org/releases/opus/opusfile-%OPUSFILE_VERSION%.tar.gz"                                                         || exit /b 1
+call :get "https://downloads.xiph.org/releases/flac/flac-%FLAC_VERSION%.tar.xz"                                                                 || exit /b 1
+call :get "https://download.sourceforge.net/mpg123/mpg123-%MPG123_VERSION%.tar.bz2"                                                             || exit /b 1
+call :get "https://github.com/libxmp/libxmp/releases/download/libxmp-%LIBXMP_VERSION%/libxmp-%LIBXMP_VERSION%.tar.gz"                           || exit /b 1
+call :get "https://github.com/dbry/WavPack/releases/download/%WAVPACK_VERSION%/wavpack-%WAVPACK_VERSION%.tar.xz"                                || exit /b 1
 
 rd /s /q %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\brotli  1>nul 2>nul
 rd /s /q %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\highway 1>nul 2>nul
