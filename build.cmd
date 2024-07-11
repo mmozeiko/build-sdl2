@@ -22,8 +22,9 @@ set JBIG_VERSION=2.1
 set LERC_VERSION=4.0.0
 set TIFF_VERSION=4.6.0
 set LIBWEBP_VERSION=1.4.0
+set LIBYUV_VERSION=464c51a
 set DAV1D_VERSION=1.4.3
-set LIBAVIF_VERSION=1.0.4
+set LIBAVIF_VERSION=1.1.0
 set LIBJXL_VERSION=0.10.3
 set FREETYPE_VERSION=2.13.2
 set HARFBUZZ_VERSION=9.0.0
@@ -165,29 +166,30 @@ rem
 rem downloading & unpacking
 rem
 
-call :get "https://github.com/madler/zlib/releases/download/v%ZLIB_VERSION%/zlib-%ZLIB_VERSION%.tar.xz"                                         || exit /b 1
-call :get "https://sourceware.org/pub/bzip2/bzip2-%BZIP2_VERSION%.tar.gz"                                                                       || exit /b 1
-call :get "https://github.com/tukaani-project/xz/releases/download/v%XZ_VERSION%/xz-%XZ_VERSION%.tar.xz"                                        || exit /b 1
-call :get "https://github.com/facebook/zstd/releases/download/v%ZSTD_VERSION%/zstd-%ZSTD_VERSION%.tar.gz"                                       || exit /b 1
-call :get "https://download.sourceforge.net/libpng/libpng-%LIBPNG_VERSION%.tar.xz"                                                              || exit /b 1
-call :get "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/%LIBJPEGTURBO_VERSION%/libjpeg-turbo-%LIBJPEGTURBO_VERSION%.tar.gz" || exit /b 1
-call :get "https://www.cl.cam.ac.uk/~mgk25/jbigkit/download/jbigkit-%JBIG_VERSION%.tar.gz"                                                      || exit /b 1
-call :get "https://github.com/Esri/lerc/archive/refs/tags/v%LERC_VERSION%.tar.gz" lerc-%LERC_VERSION%.tar.gz                                    || exit /b 1
-call :get "https://download.osgeo.org/libtiff/tiff-%TIFF_VERSION%.tar.gz"                                                                       || exit /b 1
-call :get "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-%LIBWEBP_VERSION%.tar.gz"                             || exit /b 1
-call :get "https://code.videolan.org/videolan/dav1d/-/archive/%DAV1D_VERSION%/dav1d-%DAV1D_VERSION%.tar.bz2"                                    || exit /b 1
-call :get "https://github.com/AOMediaCodec/libavif/archive/refs/tags/v%LIBAVIF_VERSION%.tar.gz" libavif-%LIBAVIF_VERSION%.tar.gz                || exit /b 1
-call :get "https://github.com/libjxl/libjxl/archive/refs/tags/v%LIBJXL_VERSION%.tar.gz" libjxl-%LIBJXL_VERSION%.tar.gz                          || exit /b 1
-call :get "https://download.savannah.gnu.org/releases/freetype/freetype-%FREETYPE_VERSION%.tar.xz"                                              || exit /b 1
-call :get "https://github.com/harfbuzz/harfbuzz/releases/download/%HARFBUZZ_VERSION%/harfbuzz-%HARFBUZZ_VERSION%.tar.xz"                        || exit /b 1
-call :get "https://downloads.xiph.org/releases/ogg/libogg-%LIBOGG_VERSION%.tar.xz"                                                              || exit /b 1
-call :get "https://downloads.xiph.org/releases/vorbis/libvorbis-%LIBVORBIS_VERSION%.tar.xz"                                                     || exit /b 1
-call :get "https://downloads.xiph.org/releases/opus/opus-%OPUS_VERSION%.tar.gz"                                                                 || exit /b 1
-call :get "https://downloads.xiph.org/releases/opus/opusfile-%OPUSFILE_VERSION%.tar.gz"                                                         || exit /b 1
-call :get "https://downloads.xiph.org/releases/flac/flac-%FLAC_VERSION%.tar.xz"                                                                 || exit /b 1
-call :get "https://download.sourceforge.net/mpg123/mpg123-%MPG123_VERSION%.tar.bz2"                                                             || exit /b 1
-call :get "https://github.com/libxmp/libxmp/releases/download/libxmp-%LIBXMP_VERSION%/libxmp-%LIBXMP_VERSION%.tar.gz"                           || exit /b 1
-call :get "https://github.com/dbry/WavPack/releases/download/%WAVPACK_VERSION%/wavpack-%WAVPACK_VERSION%.tar.xz"                                || exit /b 1
+call :get "https://github.com/madler/zlib/releases/download/v%ZLIB_VERSION%/zlib-%ZLIB_VERSION%.tar.xz"                                                     || exit /b 1
+call :get "https://sourceware.org/pub/bzip2/bzip2-%BZIP2_VERSION%.tar.gz"                                                                                   || exit /b 1
+call :get "https://github.com/tukaani-project/xz/releases/download/v%XZ_VERSION%/xz-%XZ_VERSION%.tar.xz"                                                    || exit /b 1
+call :get "https://github.com/facebook/zstd/releases/download/v%ZSTD_VERSION%/zstd-%ZSTD_VERSION%.tar.gz"                                                   || exit /b 1
+call :get "https://download.sourceforge.net/libpng/libpng-%LIBPNG_VERSION%.tar.xz"                                                                          || exit /b 1
+call :get "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/%LIBJPEGTURBO_VERSION%/libjpeg-turbo-%LIBJPEGTURBO_VERSION%.tar.gz"             || exit /b 1
+call :get "https://www.cl.cam.ac.uk/~mgk25/jbigkit/download/jbigkit-%JBIG_VERSION%.tar.gz"                                                                  || exit /b 1
+call :get "https://github.com/Esri/lerc/archive/refs/tags/v%LERC_VERSION%.tar.gz" lerc-%LERC_VERSION%.tar.gz                                                || exit /b 1
+call :get "https://download.osgeo.org/libtiff/tiff-%TIFF_VERSION%.tar.gz"                                                                                   || exit /b 1
+call :get "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-%LIBWEBP_VERSION%.tar.gz"                                         || exit /b 1
+call :get "https://chromium.googlesource.com/libyuv/libyuv/+archive/%LIBYUV_VERSION%.tar.gz" libyuv-%LIBYUV_VERSION%.tar.gz %BUILD%\libyuv-%LIBYUV_VERSION% || exit /b 1
+call :get "https://code.videolan.org/videolan/dav1d/-/archive/%DAV1D_VERSION%/dav1d-%DAV1D_VERSION%.tar.bz2"                                                || exit /b 1
+call :get "https://github.com/AOMediaCodec/libavif/archive/refs/tags/v%LIBAVIF_VERSION%.tar.gz" libavif-%LIBAVIF_VERSION%.tar.gz                            || exit /b 1
+call :get "https://github.com/libjxl/libjxl/archive/refs/tags/v%LIBJXL_VERSION%.tar.gz" libjxl-%LIBJXL_VERSION%.tar.gz                                      || exit /b 1
+call :get "https://download.savannah.gnu.org/releases/freetype/freetype-%FREETYPE_VERSION%.tar.xz"                                                          || exit /b 1
+call :get "https://github.com/harfbuzz/harfbuzz/releases/download/%HARFBUZZ_VERSION%/harfbuzz-%HARFBUZZ_VERSION%.tar.xz"                                    || exit /b 1
+call :get "https://downloads.xiph.org/releases/ogg/libogg-%LIBOGG_VERSION%.tar.xz"                                                                          || exit /b 1
+call :get "https://downloads.xiph.org/releases/vorbis/libvorbis-%LIBVORBIS_VERSION%.tar.xz"                                                                 || exit /b 1
+call :get "https://downloads.xiph.org/releases/opus/opus-%OPUS_VERSION%.tar.gz"                                                                             || exit /b 1
+call :get "https://downloads.xiph.org/releases/opus/opusfile-%OPUSFILE_VERSION%.tar.gz"                                                                     || exit /b 1
+call :get "https://downloads.xiph.org/releases/flac/flac-%FLAC_VERSION%.tar.xz"                                                                             || exit /b 1
+call :get "https://download.sourceforge.net/mpg123/mpg123-%MPG123_VERSION%.tar.bz2"                                                                         || exit /b 1
+call :get "https://github.com/libxmp/libxmp/releases/download/libxmp-%LIBXMP_VERSION%/libxmp-%LIBXMP_VERSION%.tar.gz"                                       || exit /b 1
+call :get "https://github.com/dbry/WavPack/releases/download/%WAVPACK_VERSION%/wavpack-%WAVPACK_VERSION%.tar.xz"                                            || exit /b 1
 
 rd /s /q %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\brotli  1>nul 2>nul
 rd /s /q %BUILD%\libjxl-%LIBJXL_VERSION%\third_party\highway 1>nul 2>nul
@@ -389,6 +391,28 @@ cmake.exe -Wno-dev                           ^
 cmake.exe --build %BUILD%\tiff-%TIFF_VERSION% --config Release --target install --parallel || exit /b 1
 
 rem
+rem libyuv
+rem
+
+echo CMAKE_MINIMUM_REQUIRED( VERSION 2.8.12 ) > "%BUILD%\libyuv-%LIBYUV_VERSION%\CMakeLists.txt.correct"
+move "%BUILD%\libyuv-%LIBYUV_VERSION%\CMakeLists.txt" "%BUILD%\libyuv-%LIBYUV_VERSION%\CMakeLists.txt.old"
+type "%BUILD%\libyuv-%LIBYUV_VERSION%\CMakeLists.txt.correct" "%BUILD%\libyuv-%LIBYUV_VERSION%\CMakeLists.txt.old" > "%BUILD%\libyuv-%LIBYUV_VERSION%\CMakeLists.txt"
+del "%BUILD%\libyuv-%LIBYUV_VERSION%\CMakeLists.txt.correct" "%BUILD%\libyuv-%LIBYUV_VERSION%\CMakeLists.txt.old"
+
+cmake.exe -Wno-dev                           ^
+  -S %BUILD%\libyuv-%LIBYUV_VERSION%         ^
+  -B %BUILD%\libyuv-%LIBYUV_VERSION%\build   ^
+  -A x64 -T host=x64                         ^
+  -G %MSVC_GENERATOR%                        ^
+  -DCMAKE_INSTALL_PREFIX=%DEPEND%            ^
+  -DCMAKE_POLICY_DEFAULT_CMP0091=NEW         ^
+  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
+  || exit /b 1
+cmake.exe --build %BUILD%\libyuv-%LIBYUV_VERSION%\build --config Release --target yuv --parallel || exit /b 1
+copy /Y "%BUILD%\libyuv-%LIBYUV_VERSION%\build\Release\yuv.lib" "%DEPEND%\lib"
+xcopy /Y /E "%BUILD%\libyuv-%LIBYUV_VERSION%\include" "%DEPEND%\include"
+
+rem
 rem dav1d
 rem
 
@@ -413,22 +437,24 @@ popd
 
 rem
 rem libavif
-rem dependencies: dav1d
+rem dependencies: dav1d, libyuv, libsharpyuv (part of libwebp)
 rem
 
-cmake.exe -Wno-dev                           ^
-  -S %BUILD%\libavif-%LIBAVIF_VERSION%       ^
-  -B %BUILD%\libavif-%LIBAVIF_VERSION%\build ^
-  -A x64 -T host=x64                         ^
-  -G %MSVC_GENERATOR%                        ^
-  -DCMAKE_INSTALL_PREFIX=%DEPEND%            ^
-  -DCMAKE_POLICY_DEFAULT_CMP0091=NEW         ^
-  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
-  -DBUILD_SHARED_LIBS=OFF                    ^
-  -DAVIF_ENABLE_WERROR=OFF                   ^
-  -DAVIF_CODEC_DAV1D=ON                      ^
-  -DDAV1D_LIBRARIES=%DEPEND%\lib             ^
-  -DDAV1D_LIBRARY=%DEPEND%\lib\libdav1d.a    ^
+cmake.exe -Wno-dev                                   ^
+  -S %BUILD%\libavif-%LIBAVIF_VERSION%               ^
+  -B %BUILD%\libavif-%LIBAVIF_VERSION%\build         ^
+  -A x64 -T host=x64                                 ^
+  -G %MSVC_GENERATOR%                                ^
+  -DCMAKE_INSTALL_PREFIX=%DEPEND%                    ^
+  -DCMAKE_POLICY_DEFAULT_CMP0091=NEW                 ^
+  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded         ^
+  -DBUILD_SHARED_LIBS=OFF                            ^
+  -DAVIF_ENABLE_WERROR=OFF                           ^
+  -DAVIF_CODEC_DAV1D=ON                              ^
+  -DDAV1D_LIBRARIES=%DEPEND%\lib                     ^
+  -DDAV1D_LIBRARY=%DEPEND%\lib\libdav1d.a            ^
+  -DLIBSHARPYUV_INCLUDE_DIR=%DEPEND%\include\webp    ^
+  -DLIBSHARPYUV_LIBRARY=%DEPEND%\lib\libsharpyuv.lib ^
   || exit /b 1
 cmake.exe --build %BUILD%\libavif-%LIBAVIF_VERSION%\build --config Release --target install --parallel || exit /b 1
 
@@ -556,6 +582,7 @@ cmake.exe -Wno-dev                           ^
   -DCMAKE_POLICY_DEFAULT_CMP0091=NEW         ^
   -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
   -DBUILD_SHARED_LIBS=OFF                    ^
+  -DOPUS_STATIC_RUNTIME=ON                   ^
   || exit /b 1
 cmake.exe --build %BUILD%\opus-%OPUS_VERSION% --config Release --target install --parallel || exit /b 1
 
@@ -687,7 +714,8 @@ cl.exe -MP -MT -O2 -DDLL_EXPORT -DJXL_STATIC_DEFINE -DNDEBUG -DWIN32 -Iinclude ^
   src\IMG_gif.c src\IMG_jpg.c src\IMG_jxl.c src\IMG_lbm.c src\IMG_pcx.c src\IMG_png.c src\IMG_pnm.c src\IMG_qoi.c ^
   src\IMG_svg.c src\IMG_tga.c src\IMG_tif.c src\IMG_webp.c src\IMG_xcf.c src\IMG_xpm.c src\IMG_xv.c src\version.res ^
   -link -dll -opt:icf -opt:ref -out:SDL2_image.dll -libpath:%BUILD%\libjxl-%LIBJXL_VERSION%\build\third_party\brotli\Release ^
-  SDL2.lib avif.lib libdav1d.a jxl.lib brotlicommon.lib brotlidec.lib hwy.lib tiff.lib jpeg-static.lib libpng16_static.lib libsharpyuv.lib libwebp.lib libwebpdemux.lib jbig.lib lerc.lib zstd_static.lib liblzma.lib zlibstatic.lib ^
+  SDL2.lib avif.lib libdav1d.a yuv.lib jxl.lib brotlicommon.lib brotlidec.lib hwy.lib tiff.lib jpeg-static.lib libpng16_static.lib ^
+  libsharpyuv.lib libwebp.lib libwebpdemux.lib jbig.lib lerc.lib zstd_static.lib liblzma.lib zlibstatic.lib ^
   || exit /b 1
 copy /y include\SDL_image.h %OUTPUT%\include\SDL2\
 copy /y SDL2_image.dll      %OUTPUT%\bin\
