@@ -1,5 +1,5 @@
-build
-depend
+build-*
+depend-*
 download
-SDL2_*
-*.exe
+source
+SDL2-*
