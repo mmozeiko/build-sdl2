@@ -232,27 +232,20 @@ call :clone SDL_rtf   "https://github.com/libsdl-org/SDL_rtf"   SDL2 || exit /b 
 call :clone SDL_net   "https://github.com/libsdl-org/SDL_net"   SDL2 || exit /b 1
 call :clone SDL_sound "https://github.com/icculus/SDL_sound"    main || exit /b 1
 
-pushd %SOURCE%\libyuv-%LIBYUV_VERSION%
-echo CMAKE_MINIMUM_REQUIRED(VERSION 2.8.12) > "CMakeLists.txt.correct"
-type "CMakeLists.txt"                      >> "CMakeLists.txt.correct"
-move /y "CMakeLists.txt.correct"              "CMakeLists.txt"
-popd
+rem
+rem apply patches
+rem 
 
-pushd %SOURCE%\game-music-emu-%LIBGME_VERSION%
-echo CMAKE_MINIMUM_REQUIRED(VERSION 2.8.12) > "CMakeLists.txt.correct"
-type "CMakeLists.txt"                      >> "CMakeLists.txt.correct"
-move /y "CMakeLists.txt.correct"              "CMakeLists.txt"
-popd
-
-pushd %SOURCE%\libjpeg-turbo-%LIBJPEGTURBO_VERSION%
-python.exe -c "print(open('CMakeLists.txt').read().replace('${CMAKE_SYSTEM_PROCESSOR}','""${CMAKE_SYSTEM_PROCESSOR}""'), file=open('CMakeLists.txt', 'w'))"
-popd
+call git apply -p1 --directory=source/libyuv-%LIBYUV_VERSION%              patches/libyuv.patch        || exit /b 1
+call git apply -p1 --directory=source/game-music-emu-%LIBGME_VERSION%      patches/libgme.patch        || exit /b 1
+call git apply -p1 --directory=source/libjpeg-turbo-%LIBJPEGTURBO_VERSION% patches/libjpeg-turbo.patch || exit /b 1
+call git apply -p1 --directory=source/flac-%FLAC_VERSION%                  patches/flac.patch          || exit /b 1
 
 rem
 rem MSVC Environment
 rem
 
-where /Q cl.exe || (
+where /q cl.exe || (
   for /f "tokens=*" %%i in ('"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.VisualStudio.Workload.NativeDesktop -property installationPath') do set VS=%%i
   if "!VS!" equ "" (
     echo ERROR: Visual Studio installation not found
@@ -279,7 +272,7 @@ if "%TARGET_ARCH%" equ "arm64" (
     -DCMAKE_SYSTEM_NAME=Windows             ^
     -DCMAKE_SYSTEM_PROCESSOR=arm64
 
-  where clang-cl.exe || (
+  where /q clang-cl.exe || (
     echo ERROR: "clang-cl.exe" not found, required to build "dav1d" and "libjxl" with neon intrinsic optimizations
     exit /b 1
   )
@@ -492,9 +485,7 @@ cmake.exe %CMAKE_COMMON_ARGS%              ^
   || exit /b 1
 ninja.exe -C %BUILD%\tiff-%TIFF_VERSION% install || exit /b 1
 
-pushd %DEPEND%
-python.exe -c "print(open('lib/cmake/tiff/TiffTargets.cmake').read().replace(r'\$<LINK_ONLY:ZLIB::ZLIB>;\$<LINK_ONLY:JPEG::JPEG>;\$<LINK_ONLY:JBIG::JBIG>;\$<LINK_ONLY:LERC::LERC>;\$<LINK_ONLY:liblzma::liblzma>;\$<LINK_ONLY:ZSTD::ZSTD>','zlibstatic.lib;jpeg-static.lib;jbig.lib;Lerc.lib;lzma.lib;zstd_static.lib'), file=open('lib/cmake/tiff/TiffTargets.cmake', 'w'))"
-popd
+call git apply -p1 --directory=depend-%TARGET_ARCH% patches/tiff.patch || exit /b 1
 
 rem
 rem libyuv
@@ -745,10 +736,6 @@ cmake.exe %CMAKE_COMMON_ARGS%      ^
   -D WITH_AVX=ON                   ^
   || exit /b 1
 ninja.exe -C %BUILD%\flac-%FLAC_VERSION% install || exit /b 1
-
-pushd %DEPEND%
-python.exe -c "print(open('include/FLAC/export.h').read().replace('DLL_EXPORT','FLAC_DLL_EXPORT'), file=open('include/FLAC/export.h', 'w'))"
-popd
 
 rem
 rem mpg123
