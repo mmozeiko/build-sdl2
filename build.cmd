@@ -237,7 +237,6 @@ rem apply patches
 rem 
 
 call git apply -p1 --directory=source/libyuv-%LIBYUV_VERSION%              patches/libyuv.patch        || exit /b 1
-call git apply -p1 --directory=source/game-music-emu-%LIBGME_VERSION%      patches/libgme.patch        || exit /b 1
 call git apply -p1 --directory=source/libjpeg-turbo-%LIBJPEGTURBO_VERSION% patches/libjpeg-turbo.patch || exit /b 1
 call git apply -p1 --directory=source/flac-%FLAC_VERSION%                  patches/flac.patch          || exit /b 1
 
