@@ -813,6 +813,10 @@ rem
 rem SDL
 rem
 
+if "%TARGET_ARCH%" equ "arm64" (
+  set CL=/forceInterlockedFunctions-
+)
+
 cmake.exe %CMAKE_COMMON_ARGS%      ^
   -S %SOURCE%\SDL                  ^
   -B %BUILD%\SDL                   ^
