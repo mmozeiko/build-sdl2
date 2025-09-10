@@ -836,7 +836,7 @@ rem SDL_image
 rem dependencies: avif, libjxl, tiff, libjpeg-turbo, libpng, libwebp
 rem
 
-set SDL2_IMAGE_LINK_FLAGS=-LIBPATH:%DEPEND%\lib brotlicommon.lib brotlidec.lib hwy.lib libsharpyuv.lib yuv.lib libdav1d.a
+set SDL2_IMAGE_LINK_FLAGS=-LIBPATH:%DEPEND:\=/%/lib brotlicommon.lib brotlidec.lib hwy.lib libsharpyuv.lib yuv.lib libdav1d.a
 
 cmake.exe %CMAKE_COMMON_ARGS%                            ^
   -S %SOURCE%\SDL_image                                  ^
@@ -884,7 +884,7 @@ rem SDL_mixer
 rem dependencies: libgme, libxmp, mpg123, flac, opusfile, vorbis, wavpack
 rem
 
-set SDL2_MIXER_LINK_FLAGS=-LIBPATH:%DEPEND%\lib zlibstatic.lib opus.lib
+set SDL2_MIXER_LINK_FLAGS=-LIBPATH:%DEPEND:\=/%/lib zlibstatic.lib opus.lib
 
 cmake.exe %CMAKE_COMMON_ARGS%                            ^
   -S %SOURCE%\SDL_mixer                                  ^
@@ -936,7 +936,7 @@ rem SDL_ttf
 rem dependencies: freetype, harfbuzz
 rem
 
-set SDL2_TTF_LINK_FLAGS=-LIBPATH:%DEPEND%\lib brotlicommon.lib brotlidec.lib libbz2.lib zlibstatic.lib libpng16_static.lib
+set SDL2_TTF_LINK_FLAGS=-LIBPATH:%DEPEND:\=/%/lib brotlicommon.lib brotlidec.lib libbz2.lib zlibstatic.lib libpng16_static.lib
 
 cmake.exe %CMAKE_COMMON_ARGS%                          ^
   -S %SOURCE%\SDL_ttf                                  ^
@@ -1018,7 +1018,7 @@ rem
 set /p SDL_COMMIT=<%SOURCE%\SDL\.git\refs\heads\SDL2
 set /p SDL_IMAGE_COMMIT=<%SOURCE%\SDL_image\.git\refs\heads\SDL2
 set /p SDL_MIXER_COMMIT=<%SOURCE%\SDL_mixer\.git\refs\heads\SDL2
-set /p SDL_SOUND_COMMIT=<%SOURCE%\SDL_sound\.git\refs\heads\main
+set /p SDL_SOUND_COMMIT=<%SOURCE%\SDL_sound\.git\refs\heads\stable-2.0
 set /p SDL_TTF_COMMIT=<%SOURCE%\SDL_ttf\.git\refs\heads\SDL2
 set /p SDL_RTF_COMMIT=<%SOURCE%\SDL_rtf\.git\refs\heads\SDL2
 set /p SDL_NET_COMMIT=<%SOURCE%\SDL_net\.git\refs\heads\SDL2
@@ -1047,15 +1047,15 @@ if "%GITHUB_WORKFLOW%" neq "" (
   echo Creating SDL2-%TARGET_ARCH%-!OUTPUT_DATE!.zip
   %SZIP% a -y -r -mx=9 SDL2-%TARGET_ARCH%-!OUTPUT_DATE!.zip SDL2-%TARGET_ARCH% || exit /b 1
 
-  echo OUTPUT_DATE=!OUTPUT_DATE!>>%GITHUB_OUTPUT%
+  echo OUTPUT_DATE=!OUTPUT_DATE!>>"%GITHUB_OUTPUT%"
 
-  echo SDL_COMMIT=%SDL_COMMIT%>>%GITHUB_OUTPUT%
-  echo SDL_IMAGE_COMMIT=%SDL_IMAGE_COMMIT%>>%GITHUB_OUTPUT%
-  echo SDL_MIXER_COMMIT=%SDL_MIXER_COMMIT%>>%GITHUB_OUTPUT%
-  echo SDL_SOUND_COMMIT=%SDL_SOUND_COMMIT%>>%GITHUB_OUTPUT%
-  echo SDL_TTF_COMMIT=%SDL_TTF_COMMIT%>>%GITHUB_OUTPUT%
-  echo SDL_RTF_COMMIT=%SDL_RTF_COMMIT%>>%GITHUB_OUTPUT%
-  echo SDL_NET_COMMIT=%SDL_NET_COMMIT%>>%GITHUB_OUTPUT%
+  echo SDL_COMMIT=%SDL_COMMIT%>>"%GITHUB_OUTPUT%"
+  echo SDL_IMAGE_COMMIT=%SDL_IMAGE_COMMIT%>>"%GITHUB_OUTPUT%"
+  echo SDL_MIXER_COMMIT=%SDL_MIXER_COMMIT%>>"%GITHUB_OUTPUT%"
+  echo SDL_SOUND_COMMIT=%SDL_SOUND_COMMIT%>>"%GITHUB_OUTPUT%"
+  echo SDL_TTF_COMMIT=%SDL_TTF_COMMIT%>>"%GITHUB_OUTPUT%"
+  echo SDL_RTF_COMMIT=%SDL_RTF_COMMIT%>>"%GITHUB_OUTPUT%"
+  echo SDL_NET_COMMIT=%SDL_NET_COMMIT%>>"%GITHUB_OUTPUT%"
 )
 
 rem
