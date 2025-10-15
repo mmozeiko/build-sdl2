@@ -9,6 +9,8 @@ if "%PROCESSOR_ARCHITECTURE%" equ "AMD64" (
   set HOST_ARCH=x64
 ) else if "%PROCESSOR_ARCHITECTURE%" equ "ARM64" (
   set HOST_ARCH=arm64
+) else (
+  echo Unsupported host architecture^^!
 )
 
 if "%1" equ "x64" (
@@ -16,7 +18,7 @@ if "%1" equ "x64" (
 ) else if "%1" equ "arm64" (
   set TARGET_ARCH=arm64
 ) else if "%1" neq "" (
-  echo Unknown target "%1" architecture!
+  echo Unknown target "%1" architecture^^!
   exit /b 1
 ) else (
   set TARGET_ARCH=%HOST_ARCH%
@@ -90,51 +92,16 @@ rem
 rem Dependencies
 rem
 
-where /q git.exe || (
-  echo ERROR: "git.exe" not found
-  exit /b 1
-)
-
-where /q curl.exe || (
-  echo ERROR: "curl.exe" not found
-  exit /b 1
-)
-
-where /q cmake.exe || (
-  echo ERROR: "cmake.exe" not found
-  exit /b 1
-)
-
-where /q python.exe || (
-  echo ERROR: "python.exe" not found
-  exit /b 1
-)
-
-where /q pip.exe || (
-  echo ERROR: "pip.exe" not found
-  exit /b 1
-)
+where /q git.exe    || echo ERROR: "git.exe" not found    && exit /b 1
+where /q tar.exe    || echo ERROR: "tar.exe" not found    && exit /b 1
+where /q curl.exe   || echo ERROR: "curl.exe" not found   && exit /b 1
+where /q cmake.exe  || echo ERROR: "cmake.exe" not found  && exit /b 1
+where /q python.exe || echo ERROR: "python.exe" not found && exit /b 1
+where /q pip.exe    || echo ERROR: "pip.exe" not found    && exit /b 1
 
 where /q meson.exe || (
-  pip.exe install meson
-  where /q meson.exe || (
-    echo ERROR: "meson.exe" not found
-    exit /b 1
-  )
-)
-
-rem
-rem 7-Zip
-rem
-
-if exist "%ProgramFiles%\7-Zip\7z.exe" (
-  set SZIP="%ProgramFiles%\7-Zip\7z.exe"
-) else (
-  where /q 7za.exe || (
-    echo ERROR: 7-Zip installation or "7za.exe" not found
-    exit /b 1
-  )
-  set SZIP=7za.exe
+  pip.exe install meson || exit /b 1
+  where /q meson.exe || echo ERROR: "meson.exe" not found && exit /b 1
 )
 
 rem
@@ -146,10 +113,8 @@ if "%TARGET_ARCH%" equ "x64" (
   where /q nasm.exe || (
     echo Downloading nasm
     pushd %DOWNLOAD%
-    curl.exe -sfLo nasm.zip "https://www.nasm.us/pub/nasm/releasebuilds/%NASM_VERSION%/win64/nasm-%NASM_VERSION%-win64.zip"
-    %SZIP% x -bb0 -y nasm.zip nasm-%NASM_VERSION%\nasm.exe 1>nul 2>nul || exit /b 1
-    move nasm-%NASM_VERSION%\nasm.exe nasm.exe 1>nul 2>nul
-    rd /s /q nasm-%NASM_VERSION% 1>nul 2>nul
+    curl.exe -sfLo nasm.zip "https://www.nasm.us/pub/nasm/releasebuilds/%NASM_VERSION%/win64/nasm-%NASM_VERSION%-win64.zip" || exit /b 1
+    tar.exe -xf nasm-%NASM_VERSION%-win64.zip --strip-components=1 nasm-%NASM_VERSION%/nasm.exe || exit /b 1
     popd
   )
   nasm.exe --version || exit /b 1
@@ -157,9 +122,7 @@ if "%TARGET_ARCH%" equ "x64" (
   rem yasm is used for mpg123
   where /q yasm.exe || (
     echo Downloading yasm
-    pushd %DOWNLOAD%
-    curl.exe -sfLo yasm.exe https://github.com/yasm/yasm/releases/download/v%YASM_VERSION%/yasm-%YASM_VERSION%-win64.exe || exit /b 1
-    popd
+    curl.exe -sfLo %DOWNLOAD%\yasm.exe https://github.com/yasm/yasm/releases/download/v%YASM_VERSION%/yasm-%YASM_VERSION%-win64.exe || exit /b 1
 
     if "%GITHUB_WORKFLOW%" neq "" (
       rem Install VS2010 redistributable
@@ -173,14 +136,12 @@ if "%TARGET_ARCH%" equ "x64" (
 
 where /q ninja.exe || (
   echo Downloading ninja
-  pushd %DOWNLOAD%
   if "%HOST_ARCH%" equ "x64" (
-    curl -Lsfo ninja-win.zip "https://github.com/ninja-build/ninja/releases/download/v%NINJA_VERSION%/ninja-win.zip" || exit /b 1
+    curl.exe -sfLo %DOWNLOAD%\ninja-win.zip "https://github.com/ninja-build/ninja/releases/download/v%NINJA_VERSION%/ninja-win.zip" || exit /b 1
   ) else if "%HOST_ARCH%" equ "arm64" (
-    curl -Lsfo ninja-win.zip "https://github.com/ninja-build/ninja/releases/download/v%NINJA_VERSION%/ninja-winarm64.zip" || exit /b 1
+    curl.exe -sfLo %DOWNLOAD%\ninja-win.zip "https://github.com/ninja-build/ninja/releases/download/v%NINJA_VERSION%/ninja-winarm64.zip" || exit /b 1
   )
-  %SZIP% x -bb0 -y ninja-win.zip 1>nul 2>nul || exit /b 1
-  popd
+  tar.exe -C %DOWNLOAD% -xf %DOWNLOAD%\ninja-win.zip || exit /b 1
 )
 ninja.exe --version || exit /b 1
 
@@ -362,7 +323,6 @@ cmake.exe %CMAKE_COMMON_ARGS%         ^
   -D PNG_SHARED=OFF                   ^
   -D PNG_TESTS=OFF                    ^
   -D PNG_TOOLS=OFF                    ^
-  -D PNG_DEBUG=OFF                    ^
   -D PNG_HARDWARE_OPTIMIZATIONS=ON    ^
   || exit /b 1
 ninja.exe -C %BUILD%\libpng-%LIBPNG_VERSION% install || exit /b 1
@@ -465,7 +425,6 @@ cmake.exe %CMAKE_COMMON_ARGS%              ^
   -D BUILD_SHARED_LIBS=OFF                 ^
   -D WebP_LIBRARY=%DEPEND%\lib\libwebp.lib ^
   -D tiff-tools=OFF                        ^
-  -D tiff-tools-unsupported=OFF            ^
   -D tiff-tests=OFF                        ^
   -D tiff-contrib=OFF                      ^
   -D tiff-docs=OFF                         ^
@@ -779,7 +738,9 @@ cmake.exe %CMAKE_COMMON_ARGS%                 ^
   -D CMAKE_INSTALL_PREFIX=%DEPEND%            ^
   -D CMAKE_CXX_FLAGS=-DBLARGG_EXPORT=         ^
   -D BUILD_SHARED_LIBS=OFF                    ^
-  -D ENABLE_UBSAN=OFF                         ^
+  -D GME_ENABLE_UBSAN=OFF                     ^
+  -D GME_BUILD_TESTING=OFF                    ^
+  -D GME_BUILD_EXAMPLES=OFF                   ^
   -D ZLIB_LIBRARY=%DEPEND%\lib\zlibstatic.lib ^
   || exit /b 1
 ninja.exe -C %BUILD%\game-music-emu-%LIBGME_VERSION% install || exit /b 1
@@ -1036,15 +997,13 @@ rem
 
 if "%GITHUB_WORKFLOW%" neq "" (
 
-  for /F "skip=1" %%D in ('WMIC OS GET LocalDateTime') do (set LDATE=%%D & goto :dateok)
-  :dateok
-  set OUTPUT_DATE=%LDATE:~0,4%-%LDATE:~4,2%-%LDATE:~6,2%
+  for /f "delims=" %%a in ('powershell -command "Get-Date -Format \"yyyy-MM-dd\""') do set "OUTPUT_DATE=%%a"
 
   del /q %OUTPUT%\include\SDL2\SDL_test*.h %OUTPUT%\lib\SDL2_test.lib 1>nul 2>nul
   rd /s /q %OUTPUT%\cmake %OUTPUT%\lib\pkgconfig %OUTPUT%\licenses %OUTPUT%\share 1>nul 2>nul
 
   echo Creating SDL2-%TARGET_ARCH%-!OUTPUT_DATE!.zip
-  %SZIP% a -y -r -mx=9 SDL2-%TARGET_ARCH%-!OUTPUT_DATE!.zip SDL2-%TARGET_ARCH% || exit /b 1
+  tar.exe -cavf SDL2-%TARGET_ARCH%-!OUTPUT_DATE!.zip SDL2-%TARGET_ARCH% || exit /b 1
 
   echo OUTPUT_DATE=!OUTPUT_DATE!>>"%GITHUB_OUTPUT%"
 
@@ -1092,10 +1051,7 @@ if "%3" equ "" (
   if not exist "%3" mkdir "%3"
   pushd %3
 )
-if /i "%DNAME:~0,8%" equ "harfbuzz" set SKIP_EXTRA=-xr^^!README
-%SZIP% x -bb0 -y %ARCHIVE% -so | %SZIP% x -bb0 -y -ttar -si -aoa -xr^^!*\tools\benchmark\metrics -xr^^!*\tests\cli-tests -xr^^!*\lib\lib.gni !SKIP_EXTRA! 1>nul 2>nul
-set SKIP_EXTRA=
-if exist pax_global_header del /q pax_global_header
+tar.exe -xf %ARCHIVE% || exit /b 1
 popd
 goto :eof
 
