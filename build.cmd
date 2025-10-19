@@ -93,7 +93,6 @@ rem Dependencies
 rem
 
 where /q git.exe    || echo ERROR: "git.exe" not found    && exit /b 1
-where /q tar.exe    || echo ERROR: "tar.exe" not found    && exit /b 1
 where /q curl.exe   || echo ERROR: "curl.exe" not found   && exit /b 1
 where /q cmake.exe  || echo ERROR: "cmake.exe" not found  && exit /b 1
 where /q python.exe || echo ERROR: "python.exe" not found && exit /b 1
@@ -105,6 +104,20 @@ where /q meson.exe || (
 )
 
 rem
+rem 7-Zip
+rem
+
+if exist "%ProgramFiles%\7-Zip\7z.exe" (
+  set SZIP="%ProgramFiles%\7-Zip\7z.exe"
+) else (
+  where /q 7za.exe || (
+    echo ERROR: 7-Zip installation or "7za.exe" not found
+    exit /b 1
+  )
+  set SZIP=7za.exe
+)
+
+rem
 rem yasm.exe & nasm.exe & ninja.exe
 rem
 
@@ -113,8 +126,10 @@ if "%TARGET_ARCH%" equ "x64" (
   where /q nasm.exe || (
     echo Downloading nasm
     pushd %DOWNLOAD%
-    curl.exe -sfLo nasm.zip "https://www.nasm.us/pub/nasm/releasebuilds/%NASM_VERSION%/win64/nasm-%NASM_VERSION%-win64.zip" || exit /b 1
-    tar.exe -xf nasm.zip --strip-components=1 nasm-%NASM_VERSION%/nasm.exe || exit /b 1
+    curl.exe -sfLo nasm.zip "https://www.nasm.us/pub/nasm/releasebuilds/%NASM_VERSION%/win64/nasm-%NASM_VERSION%-win64.zip"
+    %SZIP% x -bb0 -y nasm.zip nasm-%NASM_VERSION%\nasm.exe 1>nul 2>nul || exit /b 1
+    move nasm-%NASM_VERSION%\nasm.exe nasm.exe 1>nul 2>nul
+    rd /s /q nasm-%NASM_VERSION% 1>nul 2>nul
     popd
   )
   nasm.exe --version || exit /b 1
@@ -126,7 +141,7 @@ if "%TARGET_ARCH%" equ "x64" (
 
     if "%GITHUB_WORKFLOW%" neq "" (
       rem Install VS2010 redistributable
-      curl.exe -sfLO https://download.microsoft.com/download/3/2/2/3224B87F-CFA0-4E70-BDA3-3DE650EFEBA5/vcredist_x64.exe || exit /b 1
+      curl -sfLO https://download.microsoft.com/download/3/2/2/3224B87F-CFA0-4E70-BDA3-3DE650EFEBA5/vcredist_x64.exe || exit /b 1
       start /wait vcredist_x64.exe /q /norestart
       del /q vcredist_x64.exe
     )
@@ -136,12 +151,14 @@ if "%TARGET_ARCH%" equ "x64" (
 
 where /q ninja.exe || (
   echo Downloading ninja
+  pushd %DOWNLOAD%
   if "%HOST_ARCH%" equ "x64" (
-    curl.exe -sfLo %DOWNLOAD%\ninja-win.zip "https://github.com/ninja-build/ninja/releases/download/v%NINJA_VERSION%/ninja-win.zip" || exit /b 1
+    curl -Lsfo ninja-win.zip "https://github.com/ninja-build/ninja/releases/download/v%NINJA_VERSION%/ninja-win.zip" || exit /b 1
   ) else if "%HOST_ARCH%" equ "arm64" (
-    curl.exe -sfLo %DOWNLOAD%\ninja-win.zip "https://github.com/ninja-build/ninja/releases/download/v%NINJA_VERSION%/ninja-winarm64.zip" || exit /b 1
+    curl -Lsfo ninja-win.zip "https://github.com/ninja-build/ninja/releases/download/v%NINJA_VERSION%/ninja-winarm64.zip" || exit /b 1
   )
-  tar.exe -C %DOWNLOAD% -xf %DOWNLOAD%\ninja-win.zip || exit /b 1
+  %SZIP% x -bb0 -y ninja-win.zip 1>nul 2>nul || exit /b 1
+  popd
 )
 ninja.exe --version || exit /b 1
 
@@ -1003,7 +1020,7 @@ if "%GITHUB_WORKFLOW%" neq "" (
   rd /s /q %OUTPUT%\cmake %OUTPUT%\lib\pkgconfig %OUTPUT%\licenses %OUTPUT%\share 1>nul 2>nul
 
   echo Creating SDL2-%TARGET_ARCH%-!OUTPUT_DATE!.zip
-  tar.exe -cavf SDL2-%TARGET_ARCH%-!OUTPUT_DATE!.zip SDL2-%TARGET_ARCH% || exit /b 1
+  %SZIP% a -y -r -mx=9 SDL2-%TARGET_ARCH%-!OUTPUT_DATE!.zip SDL2-%TARGET_ARCH% || exit /b 1
 
   echo OUTPUT_DATE=!OUTPUT_DATE!>>"%GITHUB_OUTPUT%"
 
@@ -1051,7 +1068,7 @@ if "%3" equ "" (
   if not exist "%3" mkdir "%3"
   pushd %3
 )
-tar.exe -xf %ARCHIVE% || exit /b 1
+%SZIP% x -bb0 -y %ARCHIVE% -so | %SZIP% x -bb0 -y -ttar -si -aoa 1>nul 2>nul
 popd
 goto :eof
 
