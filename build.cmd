@@ -53,7 +53,7 @@ set LIBVORBIS_VERSION=1.3.7
 set OPUS_VERSION=1.5.2
 set OPUSFILE_VERSION=0.12
 set FLAC_VERSION=1.5.0
-set MPG123_VERSION=1.33.2
+set MPG123_VERSION=1.33.3
 set LIBXMP_VERSION=4.6.3
 set LIBGME_VERSION=0.6.4
 set WAVPACK_VERSION=5.8.1
@@ -789,10 +789,6 @@ ninja.exe -C %BUILD%\wavpack-%WAVPACK_VERSION% install || exit /b 1
 rem
 rem SDL
 rem
-
-if "%TARGET_ARCH%" equ "arm64" (
-  set CL=/forceInterlockedFunctions-
-)
 
 cmake.exe %CMAKE_COMMON_ARGS%      ^
   -S %SOURCE%\SDL                  ^
