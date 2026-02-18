@@ -32,7 +32,7 @@ set NASM_VERSION=3.01
 set YASM_VERSION=1.3.0
 set NINJA_VERSION=1.13.1
 
-set ZLIB_VERSION=1.3.1
+set ZLIB_VERSION=1.3.2
 set BZIP2_VERSION=1.0.8
 set XZ_VERSION=5.8.2
 set ZSTD_VERSION=1.5.7
@@ -264,11 +264,11 @@ cmake.exe %CMAKE_COMMON_ARGS%      ^
   -S %SOURCE%\zlib-%ZLIB_VERSION%  ^
   -B %BUILD%\zlib-%ZLIB_VERSION%   ^
   -D CMAKE_INSTALL_PREFIX=%DEPEND% ^
-  -D BUILD_SHARED_LIBS=OFF         ^
+  -D ZLIB_BUILD_STATIC=ON          ^
+  -D ZLIB_BUILD_SHARED=OFF         ^
+  -D ZLIB_BUILD_TESTING=OFF        ^
   || exit /b 1
 ninja.exe -C %BUILD%\zlib-%ZLIB_VERSION% install || exit /b 1
-
-del %DEPEND%\lib\zlib.lib 1>nul 2>nul
 
 rem
 rem bzip2
@@ -341,6 +341,7 @@ cmake.exe %CMAKE_COMMON_ARGS%         ^
   -D PNG_TESTS=OFF                    ^
   -D PNG_TOOLS=OFF                    ^
   -D PNG_HARDWARE_OPTIMIZATIONS=ON    ^
+  -D ZLIB_LIBRARY=%DEPEND%\lib\zs.lib ^
   || exit /b 1
 ninja.exe -C %BUILD%\libpng-%LIBPNG_VERSION% install || exit /b 1
 
@@ -440,6 +441,7 @@ cmake.exe %CMAKE_COMMON_ARGS%              ^
   -D CMAKE_INSTALL_PREFIX=%DEPEND%         ^
   -D CMAKE_C_FLAGS=-DLZMA_API_STATIC       ^
   -D BUILD_SHARED_LIBS=OFF                 ^
+  -D ZLIB_LIBRARY=%DEPEND%\lib\zs.lib      ^
   -D WebP_LIBRARY=%DEPEND%\lib\libwebp.lib ^
   -D tiff-tools=OFF                        ^
   -D tiff-tests=OFF                        ^
@@ -598,6 +600,7 @@ cmake.exe %CMAKE_COMMON_ARGS%             ^
   -D FT_REQUIRE_BROTLI=ON                 ^
   -D FT_REQUIRE_PNG=ON                    ^
   -D FT_REQUIRE_HARFBUZZ=ON               ^
+  -D ZLIB_LIBRARY=%DEPEND%\lib\zs.lib     ^
   || exit /b 1
 ninja.exe -C %BUILD%\freetype-%FREETYPE_VERSION% install || exit /b 1
 
@@ -758,7 +761,7 @@ cmake.exe %CMAKE_COMMON_ARGS%                 ^
   -D GME_ENABLE_UBSAN=OFF                     ^
   -D GME_BUILD_TESTING=OFF                    ^
   -D GME_BUILD_EXAMPLES=OFF                   ^
-  -D ZLIB_LIBRARY=%DEPEND%\lib\zlibstatic.lib ^
+  -D ZLIB_LIBRARY=%DEPEND%\lib\zs.lib         ^
   || exit /b 1
 ninja.exe -C %BUILD%\game-music-emu-%LIBGME_VERSION% install || exit /b 1
 
@@ -820,6 +823,7 @@ cmake.exe %CMAKE_COMMON_ARGS%                            ^
   -D CMAKE_SHARED_LINKER_FLAGS="%SDL2_IMAGE_LINK_FLAGS%" ^
   -D BUILD_SHARED_LIBS=ON                                ^
   -D SDL2_ROOT=%OUTPUT%                                  ^
+  -D SDL2IMAGE_STRICT=ON                                 ^
   -D SDL2IMAGE_DEPS_SHARED=OFF                           ^
   -D SDL2IMAGE_VENDORED=OFF                              ^
   -D SDL2IMAGE_STRICT=ON                                 ^
@@ -847,6 +851,7 @@ cmake.exe %CMAKE_COMMON_ARGS%                            ^
   -D SDL2IMAGE_XV=ON                                     ^
   -D SDL2IMAGE_JPG_SAVE=ON                               ^
   -D SDL2IMAGE_PNG_SAVE=ON                               ^
+  -D ZLIB_LIBRARY=%DEPEND%\lib\zs.lib                    ^
   -D webp_LIBRARY=%DEPEND%\lib\libwebp.lib               ^
   -D webpdemux_LIBRARY=%DEPEND%\lib\libwebpdemux.lib     ^
   || exit /b 1
@@ -857,7 +862,7 @@ rem SDL_mixer
 rem dependencies: libgme, libxmp, mpg123, flac, opusfile, vorbis, wavpack
 rem
 
-set SDL2_MIXER_LINK_FLAGS=-LIBPATH:%DEPEND:\=/%/lib zlibstatic.lib opus.lib
+set SDL2_MIXER_LINK_FLAGS=-LIBPATH:%DEPEND:\=/%/lib zs.lib opus.lib
 
 cmake.exe %CMAKE_COMMON_ARGS%                            ^
   -S %SOURCE%\SDL_mixer                                  ^
@@ -909,7 +914,7 @@ rem SDL_ttf
 rem dependencies: freetype, harfbuzz
 rem
 
-set SDL2_TTF_LINK_FLAGS=-LIBPATH:%DEPEND:\=/%/lib brotlicommon.lib brotlidec.lib libbz2.lib zlibstatic.lib libpng16_static.lib
+set SDL2_TTF_LINK_FLAGS=-LIBPATH:%DEPEND:\=/%/lib brotlicommon.lib brotlidec.lib libbz2.lib zs.lib libpng16_static.lib
 
 cmake.exe %CMAKE_COMMON_ARGS%                          ^
   -S %SOURCE%\SDL_ttf                                  ^
@@ -1077,11 +1082,9 @@ rem
 pushd %SOURCE%
 if exist %1 (
   echo Updating %1
-  pushd %1
-  call git clean --quiet -fdx
-  call git fetch --quiet --no-tags origin %3:refs/remotes/origin/%3 || exit /b 1
-  call git reset --quiet --hard origin/%3 || exit /b 1
-  popd
+  call git -C %1 clean --quiet -fdx
+  call git -C %1 fetch --quiet --no-tags origin %3:refs/remotes/origin/%3 || exit /b 1
+  call git -C %1 reset --quiet --hard origin/%3                           || exit /b 1
 ) else (
   echo Cloning %1
   call git clone --quiet --branch %3 --no-tags --depth 1 %2 %1 || exit /b 1
