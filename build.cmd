@@ -236,6 +236,9 @@ rem
 rem Build Flags
 rem
 
+set CL=/Z7
+set LINK=/OPT:REF /OPT:ICF /DEBUG /PDBALTPATH:%%_PDB%% /PDBSTRIPPED
+
 set CMAKE_COMMON_ARGS=-Wno-dev                ^
   -G Ninja                                    ^
   -D CMAKE_BUILD_TYPE="Release"               ^
@@ -535,6 +538,8 @@ set LIBJXL_EXTRA_CFLAGS=-w -DJXL_STATIC_DEFINE
 if "%TARGET_ARCH%" equ "arm64" (
   set LIBJXL_CMAKE_EXTRA=-DCMAKE_C_COMPILER=clang-cl.exe -DCMAKE_CXX_COMPILER=clang-cl.exe
   set LIBJXL_EXTRA_CFLAGS=%LIBJXL_EXTRA_CFLAGS% --target=aarch64-win32-msvc
+  set LINK_OLD=%LINK%
+  set LINK=
 )
 
 cmake.exe %CMAKE_COMMON_ARGS%                                                                   ^
@@ -570,6 +575,10 @@ cmake.exe %CMAKE_COMMON_ARGS%                                                   
   %LIBJXL_CMAKE_EXTRA%                                                                          ^
   || exit /b 1
 ninja.exe -C %BUILD%\libjxl-%LIBJXL_VERSION% install || exit /b 1
+
+if "%TARGET_ARCH%" equ "arm64" (
+  set LINK=%LINK_OLD%
+)
 
 rem
 rem harfbuzz (dummy build, just to have dependency for freetype)
@@ -801,11 +810,16 @@ cmake.exe %CMAKE_COMMON_ARGS%      ^
   || exit /b 1
 ninja.exe -C %BUILD%\SDL install || exit /b 1
 
+set CL_BACKUP=%CL%
+set CL=
+
 pushd %BUILD%\SDL
 cl.exe -c -MT -O2 -Zl -DDLL_EXPORT -DNDEBUG -DWIN32 -I%OUTPUT%\include\SDL2 %SOURCE%\SDL\src\main\windows\SDL_windows_main.c || exit /b 1
 lib.exe -nologo -out:SDL2main.lib SDL_windows_main.obj || exit /b 1
 move /y SDL2main.lib %OUTPUT%\lib\
 popd
+
+set CL=%CL_BACKUP%
 
 rem
 rem SDL_image
@@ -990,6 +1004,18 @@ cmake.exe %CMAKE_COMMON_ARGS%      ^
 ninja.exe -C %BUILD%\SDL_sound install || exit /b 1
 
 rem
+rem PDB Files
+rem
+
+copy /Y %BUILD%\SDL\SDL2.stripped.pdb             %OUTPUT%\bin\SDL2.pdb       1>nul 2>nul
+copy /Y %BUILD%\SDL_image\SDL2_image.stripped.pdb %OUTPUT%\bin\SDL2_image.pdb 1>nul 2>nul
+copy /Y %BUILD%\SDL_mixer\SDL2_mixer.stripped.pdb %OUTPUT%\bin\SDL2_mixer.pdb 1>nul 2>nul
+copy /Y %BUILD%\SDL_sound\SDL2_sound.stripped.pdb %OUTPUT%\bin\SDL2_sound.pdb 1>nul 2>nul
+copy /Y %BUILD%\SDL_ttf\SDL2_ttf.stripped.pdb     %OUTPUT%\bin\SDL2_ttf.pdb   1>nul 2>nul
+copy /Y %BUILD%\SDL_rtf\SDL2_rtf.stripped.pdb     %OUTPUT%\bin\SDL2_rtf.pdb   1>nul 2>nul
+copy /Y %BUILD%\SDL_net\SDL2_net.stripped.pdb     %OUTPUT%\bin\SDL2_net.pdb   1>nul 2>nul
+
+rem
 rem Collect Commit Hashes
 rem
 
@@ -1017,7 +1043,7 @@ if "%GITHUB_WORKFLOW%" neq "" (
 
   for /f "delims=" %%a in ('powershell -command "Get-Date -Format \"yyyy-MM-dd\""') do set "OUTPUT_DATE=%%a"
 
-  del /q %OUTPUT%\include\SDL2\SDL_test*.h %OUTPUT%\lib\SDL2_test.lib 1>nul 2>nul
+  del /q %OUTPUT%\include\SDL2\SDL_test*.h %OUTPUT%\lib\SDL2_test.* %OUTPUT%\lib\SDL2main.pdb 1>nul 2>nul
   rd /s /q %OUTPUT%\cmake %OUTPUT%\lib\pkgconfig %OUTPUT%\licenses %OUTPUT%\share 1>nul 2>nul
 
   echo Creating SDL2-%TARGET_ARCH%-!OUTPUT_DATE!.zip
