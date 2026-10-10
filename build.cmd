@@ -1105,10 +1105,14 @@ if not exist %ARCHIVE% (
   echo Downloading %DNAME%
   curl.exe --retry 5 --retry-all-errors -sfLo %ARCHIVE% %1 || exit /b 1
 )
-for %%N in ("%ARCHIVE%") do set NAME=%%~nN
-if exist %NAME% (
+for %%N in ("%ARCHIVE%") do (
+  set NAME=%%~nN
+  for %%E in ("!NAME!") do set EXT=%%~xE
+)
+if "%EXT%" equ ".tar" for %%N in ("%NAME%") do set NAME=%%~nN
+if exist %SOURCE%\%NAME% (
   echo Removing %NAME%
-  rd /s /q %NAME%
+  rd /s /q %SOURCE%\%NAME%
 )
 echo Unpacking %DNAME%
 if "%3" equ "" (
