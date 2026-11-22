@@ -568,7 +568,7 @@ if "%TARGET_ARCH%" equ "x64" (
   set LIBJXL_EXTRA_FLAGS=-w -DJXL_STATIC_DEFINE
 ) else if "%TARGET_ARCH%" equ "arm64" (
   if "%GITHUB_WORKFLOW%" neq "" (
-    set LIBJXL_CC="C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\Llvm\x64\bin\clang-cl.exe"
+    set LIBJXL_CC="C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\x64\bin\clang-cl.exe"
   ) else (
     set LIBJXL_CC=clang-cl.exe
   )
